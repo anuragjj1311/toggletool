@@ -1,56 +1,14 @@
 class ToggleService
   class << self
-    # Create a new tab with toggles
-    def create_tab_with_toggles(tab_params, toggles_data = [])
-      ActiveRecord::Base.transaction do
-        tab = Tab.create!(tab_params)
-        
-        toggles_data.each do |toggle_data|
-          toggle = create_toggle_for_tab(tab, toggle_data)
-          associate_toggle_with_tab(tab, toggle, toggle_data[:association] || {})
-        end
-        
-        tab
-      end
-    end
-
-    # Create a toggle and associate it with a tab
-    def create_toggle_for_tab(tab, toggle_data)
-      link_data = toggle_data.delete(:link_generator) || {}
-      toggle = Toggle.create!(toggle_data)
-      
-      # Create link generator
-      link_type = determine_link_type(link_data[:url])
-      link_generator = "#{link_type.classify}".constantize.create!(
-        linkable: toggle,
-        url: link_data[:url],
-        description: link_data[:description]
-      )
-      
-      toggle
-    end
-
-    # Associate a toggle with a tab
-    def associate_toggle_with_tab(tab, toggle, association_data = {})
-      association_params = {
-        tab: tab,
-        toggle: toggle,
-        toggle_type: toggle.toggle_type,
-        link_type: toggle.link_generator.type,
-        start_date: association_data[:start_date] || tab.start_date,
-        end_date: association_data[:end_date] || tab.end_date,
-        regions: association_data[:regions] || tab.regions
-      }
-      
-      TabToggleAssociation.create!(association_params)
-    end
-
-    # Get active toggles for a tab by region
+    # Get active toggles for a tab by region (through associations)
     def active_toggles_for_tab(tab, region = nil)
       associations = tab.tab_toggle_associations.active
       associations = associations.by_region(region) if region.present?
       
-      associations.includes(:toggle => :link_generator).map(&:toggle)
+      Toggle.joins(:tab_toggle_associations)
+            .where(tab_toggle_associations: { id: associations.select(:id) })
+            .includes(:link_generator)
+            .active
     end
 
     # Get active tabs with their toggles
@@ -67,13 +25,28 @@ class ToggleService
       end
     end
 
-    # Update toggle association dates
-    def update_toggle_association(tab, toggle, new_dates)
-      association = tab.tab_toggle_associations.find_by(toggle: toggle)
-      association&.update!(new_dates)
+    # Create association between tab and toggle
+    def create_association(tab, toggle, options = {})
+      association_data = {
+        tab: tab,
+        toggle: toggle,
+        toggle_type: toggle.toggle_type,
+        link_type: toggle.link_generator.type,
+        start_date: options[:start_date] || toggle.start_date,
+        end_date: options[:end_date] || toggle.end_date,
+        regions: options[:regions] || tab.regions
+      }
+      
+      TabToggleAssociation.create!(association_data)
     end
 
-    # Soft delete a toggle from a specific tab
+    # Update toggle association
+    def update_association(tab, toggle, updates)
+      association = tab.tab_toggle_associations.find_by(toggle: toggle)
+      association&.update!(updates)
+    end
+
+    # Remove toggle from tab (delete association)
     def remove_toggle_from_tab(tab, toggle)
       association = tab.tab_toggle_associations.find_by(toggle: toggle)
       association&.destroy
@@ -99,31 +72,6 @@ class ToggleService
       expired_count
     end
 
-    # Duplicate a tab with all its toggles
-    def duplicate_tab(original_tab, new_tab_params)
-      ActiveRecord::Base.transaction do
-        new_tab = Tab.create!(new_tab_params)
-        
-        original_tab.tab_toggle_associations.each do |association|
-          new_association = association.dup
-          new_association.tab = new_tab
-          new_association.save!
-        end
-        
-        new_tab
-      end
-    end
-
-    # Bulk update toggle associations
-    def bulk_update_associations(association_updates)
-      ActiveRecord::Base.transaction do
-        association_updates.each do |update_data|
-          association = TabToggleAssociation.find(update_data[:id])
-          association.update!(update_data.except(:id))
-        end
-      end
-    end
-
     # Generate toggle URLs for a specific region
     def generate_toggle_urls(tab, region = nil)
       toggles = active_toggles_for_tab(tab, region)
@@ -139,13 +87,13 @@ class ToggleService
       end
     end
 
-    private
-
-    def determine_link_type(url)
-      case url
-      when String then 'direct_link'
-      when Hash then 'activity_link'
-      else raise ArgumentError, 'URL must be either String or Hash'
+    # Sync toggle data with its associations
+    def sync_toggle_associations(toggle)
+      toggle.tab_toggle_associations.each do |association|
+        association.update!(
+          toggle_type: toggle.toggle_type,
+          link_type: toggle.link_generator.type
+        )
       end
     end
   end
