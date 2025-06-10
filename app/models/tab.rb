@@ -11,7 +11,7 @@ class Tab < ApplicationRecord
 
   scope :active, -> { where('start_date <= ? AND end_date >= ?', Date.current, Date.current) }
   scope :by_region, ->(region) { 
-    where("JSON_EXTRACT(regions, '$[*]') LIKE ?", "%#{region}%")
+    where("regions LIKE ?", "%#{region}%")
   }
 
   def active?

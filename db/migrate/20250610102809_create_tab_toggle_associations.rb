@@ -7,7 +7,7 @@ class CreateTabToggleAssociations < ActiveRecord::Migration[7.0]
       t.string :link_type, null: false # 'DirectLink' or 'ActivityLink'
       t.date :start_date, null: false
       t.date :end_date, null: false
-      t.json :regions
+      t.text :regions # SQLite doesn't have native JSON, use text with serialization
       t.boolean :active, default: true
       t.integer :sort_order, default: 0
 

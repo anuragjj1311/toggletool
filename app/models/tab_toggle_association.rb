@@ -16,7 +16,7 @@ class TabToggleAssociation < ApplicationRecord
   scope :by_toggle_type, ->(type) { where(toggle_type: type) }
   scope :by_link_type, ->(type) { where(link_type: type) }
   scope :by_region, ->(region) { 
-    where("JSON_EXTRACT(regions, '$[*]') LIKE ?", "%#{region}%")
+    where("regions LIKE ?", "%#{region}%")
   }
 
   def active?

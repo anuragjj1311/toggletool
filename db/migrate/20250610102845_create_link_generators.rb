@@ -5,7 +5,7 @@ class CreateLinkGenerators < ActiveRecord::Migration[7.0]
       t.string :type, null: false # 'DirectLink' or 'ActivityLink'
       t.text :url, null: false # String for DirectLink, JSON for ActivityLink
       t.text :description
-      t.json :metadata
+      t.text :metadata # SQLite doesn't have native JSON, use text with serialization
 
       t.timestamps
     end
