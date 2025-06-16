@@ -51,7 +51,7 @@ class TogglesController < ApplicationController
         end
 
         if @association.save
-          redirect_to toggles_path
+          redirect_to toggles_path, notice: 'Toggle was successfully created.'
         else
           @toggle.destroy
           @toggle_types = Toggle::VALID_TOGGLE_TYPES
@@ -100,7 +100,7 @@ class TogglesController < ApplicationController
         end
 
         if @association.update(association_params)
-          redirect_to toggles_path
+          redirect_to toggles_path, notice: 'Toggle was successfully updated.'
         else
           @toggle_types = Toggle::VALID_TOGGLE_TYPES
           @tab_types = Tab::VALID_TAB_TYPES
@@ -120,7 +120,7 @@ class TogglesController < ApplicationController
 
   def destroy
     @toggle.soft_delete!
-    redirect_to toggles_path
+    redirect_to toggles_path, notice: 'Toggle was successfully deleted.'
   end
 
   private

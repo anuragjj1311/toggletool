@@ -1,77 +1,94 @@
-module Api
-  module V1
-    class TabsController < ApplicationController
-      before_action :set_tab, only: [:show, :update, :destroy]
-      before_action :set_toggle, only: [:create]
+class Api::V1::TabsController < ApplicationController
+  before_action :set_tab, only: [:show, :update]
 
-      def index
-        @tabs = Tab.all
-        render json: @tabs
-      end
+  def index
+    @tabs = Tab.includes(tab_toggle_associations: { linked_toggle: :link_generator }).all
+    @tabs = @tabs.by_region(params[:region]) if params[:region].present?
+    @tabs = @tabs.active if params[:active] == 'true'
 
-      def show
-        @associations = @toggle.tab_toggle_associations.includes(:tab)
-        render json: {
-          tab: @tab,
-          associations: @associations
+    result = {}
+    
+    @tabs.each do |tab|
+      toggles_data = tab.tab_toggle_associations.includes(linked_toggle: :link_generator).map do |association|
+        links = generate_links_for_association(association)
+        
+        {
+          id: association.linked_toggle.id,
+          title: association.linked_toggle.title,
+          type: association.toggle_type,
+          start_date: association.start_date,
+          end_date: association.end_date,
+          regions: association.regions,
+          link_type: association.link_type,
+          links: links
         }
       end
-
-      def create
-        @tab = Tab.new(tab_params)
-        
-        ActiveRecord::Base.transaction do
-          if @tab.save
-            # Create a new association for this tab and toggle
-            @association = TabToggleAssociation.create!(
-              tab: @tab,
-              linked_toggle: @toggle,
-              start_date: @tab.start_date,
-              end_date: @tab.end_date,
-              toggle_type: @toggle.toggle_type,
-              link_type: @toggle.link_generator&.link_type || 'DIRECT'
-            )
-            
-            render json: { 
-              message: 'Tab was successfully created',
-              tab: @tab,
-              association: @association
-            }, status: :created
-          else
-            render json: { errors: @tab.errors }, status: :unprocessable_entity
-          end
-        end
-      end
-
-      def update
-        if @tab.update(tab_params)
-          render json: { 
-            message: 'Tab was successfully updated',
-            tab: @tab
-          }
-        else
-          render json: { errors: @tab.errors }, status: :unprocessable_entity
-        end
-      end
-
-      def destroy
-        @tab.destroy
-        render json: { message: 'Tab was successfully deleted' }
-      end
-
-      private
-
-      def set_tab
-        @tab = Tab.find(params[:id])
-      end
-
-      def set_toggle
-        @toggle = Toggle.find(params[:toggle_id])
-      end
-
-      def tab_params
-        params.require(:tab).permit(:tab_type, :start_date, :end_date)
-      end
+      
+      result[tab.title] = toggles_data
     end
+
+    render json: { all_tabs: result }
+  end
+
+  def show
+    toggles_data = @tab.tab_toggle_associations.includes(linked_toggle: :link_generator).map do |association|
+      links = generate_links_for_association(association)
+      
+      {
+        id: association.linked_toggle.id,
+        title: association.linked_toggle.title,
+        type: association.toggle_type,
+        start_date: association.start_date,
+        end_date: association.end_date,
+        regions: association.regions,
+        link_type: association.link_type,
+        links: links
+      }
+    end
+
+    render json: {
+      tab: {
+        id: @tab.id,
+        title: @tab.title,
+        start_date: @tab.start_date,
+        end_date: @tab.end_date,
+        regions: @tab.regions,
+        toggles: toggles_data
+      }
+    }
+  end
+
+  def update
+    if @tab.update(tab_params)
+      render json: @tab.as_json(except: [:tab_type])
+    else
+      render_error(@tab.errors.full_messages.join(', '))
+    end
+  end
+
+  private
+
+  def set_tab
+    @tab = Tab.find(params[:id])
+  end
+
+  def generate_links_for_association(association)
+        link_generator = association.linked_toggle&.link_generator
+    return { 'default' => '#' } if link_generator.nil?
+
+    case association.link_type
+    when 'DIRECT'
+        { 'default' => link_generator.url }
+    when 'ACTIVITY'
+        url_data = link_generator.url
+        url_data.is_a?(Hash) ? url_data : { 'default' => url_data }
+    else
+        { 'default' => '#' }
+    end
+  end
+
+  def tab_params
+    # Only allow updating dates and regions, not title
+    params.require(:tab).permit(:start_date, :end_date, regions: [])
   end
 end

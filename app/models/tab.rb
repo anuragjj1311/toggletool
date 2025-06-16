@@ -3,11 +3,10 @@ class Tab < ApplicationRecord
   has_many :toggles, through: :tab_toggle_associations
 
   # Define tab types from configuration
-  VALID_TAB_TYPES = %w[Men Women Kids Girls Boys].freeze
+  VALID_TAB_TYPES = Rails.application.config.tab_types
   
-  validates :tab_type, presence: true, inclusion: { in: VALID_TAB_TYPES }
-  validates :start_date, presence: true
-  validates :end_date, presence: true
+  validates :title, presence: true, inclusion: { in: VALID_TAB_TYPES }
+  validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
 
   # Store regions as JSON array - predefined regions
@@ -23,18 +22,11 @@ class Tab < ApplicationRecord
   # Prevent deletion of predefined tabs
   before_destroy :prevent_predefined_tab_deletion
 
-  def active?
-    Date.current.between?(start_date, end_date)
-  end
-
   private
 
   def end_date_after_start_date
-    return if end_date.blank? || start_date.blank?
-
-    if end_date < start_date
-      errors.add(:end_date, "must be after the start date")
-    end
+    return unless start_date && end_date
+    errors.add(:end_date, 'must be after start date') if end_date < start_date
   end
 
   def regions_must_be_valid
@@ -44,8 +36,8 @@ class Tab < ApplicationRecord
   end
 
   def prevent_predefined_tab_deletion
-    if VALID_TAB_TYPES.include?(tab_type)
-      errors.add(:base, "Cannot delete predefined tab: #{tab_type}")
+    if VALID_TAB_TYPES.include?(title)
+      errors.add(:base, "Cannot delete predefined tab: #{title}")
       throw(:abort)
     end
   end

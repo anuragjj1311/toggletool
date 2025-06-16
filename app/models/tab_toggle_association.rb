@@ -12,7 +12,6 @@ class TabToggleAssociation < ApplicationRecord
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
   validate :regions_must_be_valid
-  validates :tab_id, uniqueness: { scope: :toggle_id, message: "is already associated with this toggle" }
 
   # Store regions as JSON array
   serialize :regions, coder: JSON

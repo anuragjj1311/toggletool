@@ -1,21 +1,25 @@
 Rails.application.routes.draw do
-  # Web routes
-  get 'toggles/new', to: 'toggles#new', as: :new_toggle
-  get 'toggles/:id/edit', to: 'toggles#edit', as: :edit_toggle
-
-  resources :toggles, except: [:new, :edit] do
-    resources :tabs, only: [:new, :create, :edit, :update, :destroy], controller: 'tabs'
-  end
-
-  root 'home#index'
-
-  # API routes
   namespace :api do
     namespace :v1 do
-      resources :toggles do
-        resources :tabs, only: [:create]
+      get 'available_options', to: 'toggles#available_options'
+
+      # Custom route for tabs index at /api/v1/tabs/config
+      get 'tabs/config', to: 'tabs#index'
+      resources :tabs, only: [:index, :show, :update]
+
+      resources :tabs, only: [:show, :update] do
+        resources :toggles, except: [:destroy]
+        resources :category_toggles, path: 'categories'
+        resources :shop_toggles, path: 'shops'
       end
-      resources :tabs, only: [:index, :show, :update, :destroy]
+
+      resources :toggles, only: [:show, :update, :destroy] do
+        member do
+          get :tabs_for_toggle, path: '' 
+          patch :restore
+          patch :reset
+        end
+      end
     end
   end
 end
