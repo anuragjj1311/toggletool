@@ -10,14 +10,40 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_10_102845) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_16_120146) do
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "link_generators", force: :cascade do |t|
+    t.string "type", null: false
     t.string "linkable_type", null: false
     t.integer "linkable_id", null: false
-    t.string "type", null: false
     t.text "url", null: false
-    t.text "description"
-    t.text "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["linkable_type", "linkable_id"], name: "index_link_generators_on_linkable"
@@ -33,11 +59,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_10_102845) do
     t.date "start_date", null: false
     t.date "end_date", null: false
     t.text "regions"
-    t.boolean "active", default: true
-    t.integer "sort_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active"], name: "index_tab_toggle_associations_on_active"
     t.index ["link_type"], name: "index_tab_toggle_associations_on_link_type"
     t.index ["start_date", "end_date"], name: "index_tab_toggle_associations_on_start_date_and_end_date"
     t.index ["tab_id", "toggle_id"], name: "index_tab_toggle_associations_on_tab_id_and_toggle_id", unique: true
@@ -47,40 +70,31 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_10_102845) do
   end
 
   create_table "tabs", force: :cascade do |t|
-    t.string "title", null: false
-    t.text "description"
+    t.string "title"
     t.date "start_date", null: false
     t.date "end_date", null: false
     t.text "regions"
-    t.boolean "active", default: true
-    t.integer "sort_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active"], name: "index_tabs_on_active"
+    t.string "tab_type"
     t.index ["start_date", "end_date"], name: "index_tabs_on_start_date_and_end_date"
     t.index ["title"], name: "index_tabs_on_title"
   end
 
   create_table "toggles", force: :cascade do |t|
     t.string "title", null: false
-    t.text "description"
     t.string "toggle_type", null: false
     t.string "image_url"
-    t.string "landing_url"
-    t.date "start_date", null: false
-    t.date "end_date", null: false
-    t.boolean "active", default: true
     t.datetime "deleted_at"
-    t.integer "sort_order", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active"], name: "index_toggles_on_active"
     t.index ["deleted_at"], name: "index_toggles_on_deleted_at"
-    t.index ["start_date", "end_date"], name: "index_toggles_on_start_date_and_end_date"
     t.index ["title"], name: "index_toggles_on_title"
     t.index ["toggle_type"], name: "index_toggles_on_toggle_type"
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "tab_toggle_associations", "tabs"
   add_foreign_key "tab_toggle_associations", "toggles"
 end

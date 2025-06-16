@@ -9,7 +9,7 @@ class ActivityLink < LinkGenerator
   end
 
   def link_type
-    'activity'
+    'ACTIVITY'
   end
 
   private
@@ -19,23 +19,11 @@ class ActivityLink < LinkGenerator
   end
 
   def build_activity_url
-    if url['landing_url'].present?
-      url['landing_url']
-    elsif url['landing_urls'].present?
-      determine_appropriate_landing_url(url['landing_urls'])
-    else
-      build_custom_activity_url
-    end
+    # Return the entire hash of URLs for ACTIVITY links
+    # This allows the frontend to choose the appropriate URL based on context
+    url
   rescue => e
     Rails.logger.error "Failed to build activity URL: #{e.message}"
-    '#'
-  end
-  
-  def determine_appropriate_landing_url(landing_urls)
-    landing_urls.values.first 
-  end
-
-  def build_custom_activity_url
-    '/default-activity-url'
+    { 'default' => '#' }
   end
 end

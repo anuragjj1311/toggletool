@@ -1,27 +1,28 @@
 class TabToggleAssociation < ApplicationRecord
   belongs_to :tab
-  belongs_to :toggle
+  belongs_to :linked_toggle, class_name: 'Toggle', foreign_key: 'toggle_id'
+  
+  alias_method :toggle, :linked_toggle
 
-  validates :tab_id, :toggle_id, presence: true
-  validates :toggle_type, presence: true, inclusion: { in: %w[Shop Category] }
-  validates :link_type, presence: true, inclusion: { in: %w[DirectLink ActivityLink] }
+  # Define valid link types as enum
+  VALID_LINK_TYPES = %w[DIRECT ACTIVITY].freeze
+
+  validates :toggle_type, presence: true, inclusion: { in: Toggle::VALID_TOGGLE_TYPES }
+  validates :link_type, presence: true, inclusion: { in: VALID_LINK_TYPES }
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
-  validate :toggle_type_matches_toggle
+  validate :regions_must_be_valid
+  validates :tab_id, uniqueness: { scope: :toggle_id, message: "is already associated with this toggle" }
 
-  # JSON field for regions
+  # Store regions as JSON array
   serialize :regions, coder: JSON
 
   scope :active, -> { where('start_date <= ? AND end_date >= ?', Date.current, Date.current) }
-  scope :by_toggle_type, ->(type) { where(toggle_type: type) }
-  scope :by_link_type, ->(type) { where(link_type: type) }
   scope :by_region, ->(region) { 
-    where("regions LIKE ?", "%#{region}%")
+    where("json_extract(regions, '$') LIKE ?", "%#{region}%")
   }
-
-  def active?
-    start_date <= Date.current && end_date >= Date.current
-  end
+  scope :shops, -> { where(toggle_type: 'SHOP') }
+  scope :categories, -> { where(toggle_type: 'CATEGORY') }
 
   private
 
@@ -30,8 +31,9 @@ class TabToggleAssociation < ApplicationRecord
     errors.add(:end_date, 'must be after start date') if end_date < start_date
   end
 
-  def toggle_type_matches_toggle
-    return unless toggle && toggle_type
-    errors.add(:toggle_type, 'must match the toggle type') if toggle_type != toggle.toggle_type
+  def regions_must_be_valid
+    return unless regions.is_a?(Array)
+    invalid_regions = regions - Rails.application.config.regions
+    errors.add(:regions, "contains invalid regions: #{invalid_regions.join(', ')}") if invalid_regions.any?
   end
 end

@@ -1,6 +1,6 @@
 class ToggleService
   class << self
-    # Get active toggles for a tab by region (through associations)
+
     def active_toggles_for_tab(tab, region = nil)
       associations = tab.tab_toggle_associations.active
       associations = associations.by_region(region) if region.present?
@@ -11,7 +11,7 @@ class ToggleService
             .active
     end
 
-    # Get active tabs with their toggles
+
     def active_tabs_with_toggles(region = nil)
       tabs = Tab.active
       tabs = tabs.by_region(region) if region.present?

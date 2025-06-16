@@ -1,64 +1,90 @@
 class Api::V1::ShopTogglesController < ApplicationController
   before_action :set_tab
-  before_action :set_shop, only: [:show, :update, :destroy, :restore, :reset]
+  before_action :set_shop_association, only: [:show, :update, :destroy, :restore, :reset]
+
+  def index
+    @shop_associations = @tab.tab_toggle_associations
+                            .where(toggle_type: 'Shop')
+                            .includes(linked_toggle: :link_generator)
+
+    render json: @shop_associations.as_json(include: { linked_toggle: { include: :link_generator } })
+  end
 
   def create
-    @shop = @tab.toggles.build(toggle_params.merge(toggle_type: 'Shop'))
+    params[:toggle][:toggle_type] = 'Shop'
     
-    if @shop.save
-      create_association
-      render json: @shop.as_json(
-        include: {
-          link_generator: { except: [:linkable_type, :linkable_id] }
-        }
-      ), status: :created
-    else
-      render_error(@shop.errors.full_messages.join(', '))
+    ActiveRecord::Base.transaction do
+      @toggle = Toggle.new(toggle_params.except(:route_info, :regions, :start_date, :end_date))
+      
+      if toggle_params[:route_info].present?
+        @toggle.route_info = toggle_params[:route_info]
+      end
+      
+      unless @toggle.save
+        render_error(@toggle.errors.full_messages.join(', '))
+        return
+      end
+
+      @association = @tab.tab_toggle_associations.build(
+        toggle_id: @toggle.id,  # Fixed: using toggle_id instead of toggle
+        toggle_type: 'Shop',
+        link_type: toggle_params.dig(:route_info, :link_type) || 'DirectLink',
+        start_date: toggle_params[:start_date],
+        end_date: toggle_params[:end_date],
+        regions: toggle_params[:regions]
+      )
+
+      if @association.save
+        render json: @association.as_json(include: { linked_toggle: { include: :link_generator } }), status: :created
+      else
+        render_error(@association.errors.full_messages.join(', '))
+      end
     end
   end
 
   def update
-    if @shop.update(toggle_params)
-      update_association
-      render json: @shop.as_json(
-        include: {
-          link_generator: { except: [:linkable_type, :linkable_id] }
-        }
-      )
-    else
-      render_error(@shop.errors.full_messages.join(', '))
+    ActiveRecord::Base.transaction do
+      if @association.linked_toggle.update(toggle_params.except(:route_info, :regions, :start_date, :end_date, :toggle_type))
+        if toggle_params[:route_info].present?
+          @association.linked_toggle.route_info = toggle_params[:route_info]
+          @association.linked_toggle.save!
+        end
+        
+        association_params = {
+          link_type: toggle_params.dig(:route_info, :link_type) || @association.link_type,
+          start_date: toggle_params[:start_date],
+          end_date: toggle_params[:end_date],
+          regions: toggle_params[:regions]
+        }.compact
+        
+        if @association.update(association_params)
+          render json: @association.as_json(include: { linked_toggle: { include: :link_generator } })
+        else
+          render_error(@association.errors.full_messages.join(', '))
+        end
+      else
+        render_error(@association.linked_toggle.errors.full_messages.join(', '))
+      end
     end
   end
 
   def show
-    render json: @shop.as_json(
-      include: {
-        link_generator: { except: [:linkable_type, :linkable_id] }
-      }
-    )
+    render json: @association.as_json(include: { linked_toggle: { include: :link_generator } })
   end
 
   def destroy
-    @shop.soft_delete!
+    @association.linked_toggle.soft_delete!
     render_success({}, 'Shop Toggle soft deleted successfully')
   end
 
   def restore
-    @shop.restore!
-    render_success(@shop.as_json(
-      include: {
-        link_generator: { except: [:linkable_type, :linkable_id] }
-      }
-    ), 'Shop Toggle restored successfully')
+    @association.linked_toggle.restore!
+    render_success(@association.as_json(include: { linked_toggle: { include: :link_generator } }), 'Shop Toggle restored successfully')
   end
 
   def reset
-    @shop.reset_to_default!
-    render_success(@shop.as_json(
-      include: {
-        link_generator: { except: [:linkable_type, :linkable_id] }
-      }
-    ), 'Shop Toggle reset to default successfully')
+    @association.linked_toggle.reset_to_default!
+    render_success(@association.as_json(include: { linked_toggle: { include: :link_generator } }), 'Shop Toggle reset to default successfully')
   end
 
   private
@@ -67,40 +93,18 @@ class Api::V1::ShopTogglesController < ApplicationController
     @tab = Tab.find(params[:tab_id])
   end
 
-  def set_shop
-    @shop = @tab.toggles.find_by!(id: params[:id], toggle_type: 'Shop')
+  def set_shop_association
+    @association = @tab.tab_toggle_associations.joins(:linked_toggle)
+                       .where(toggle_type: 'Shop', linked_toggles: { id: params[:id] })
+                       .includes(linked_toggle: :link_generator)
+                       .first!
   end
 
   def toggle_params
     params.require(:toggle).permit(
-      :title, :image_url, :landing_url, :start_date, :end_date,
+      :title, :image_url, :toggle_type, :start_date, :end_date,
       regions: [],
-      route_info: [:url, :type]
+      route_info: [:link_type, :url]
     )
-  end
-
-  def create_association
-    association_data = {
-      tab: @tab,
-      toggle: @shop,
-      toggle_type: 'Shop',
-      link_type: @shop.link_generator.type,
-      start_date: @shop.start_date,
-      end_date: @shop.end_date,
-      regions: toggle_params[:regions] || @tab.regions
-    }
-    
-    TabToggleAssociation.create!(association_data)
-  end
-
-  def update_association
-    association = @tab.tab_toggle_associations.find_by(toggle: @shop)
-    if association
-      association.update!(
-        start_date: @shop.start_date,
-        end_date: @shop.end_date,
-        regions: toggle_params[:regions] || association.regions
-      )
-    end
   end
 end

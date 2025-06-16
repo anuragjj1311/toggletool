@@ -1,28 +1,21 @@
 Rails.application.routes.draw do
+  # Web routes
+  get 'toggles/new', to: 'toggles#new', as: :new_toggle
+  get 'toggles/:id/edit', to: 'toggles#edit', as: :edit_toggle
+
+  resources :toggles, except: [:new, :edit] do
+    resources :tabs, only: [:new, :create, :edit, :update, :destroy], controller: 'tabs'
+  end
+
+  root 'home#index'
+
+  # API routes
   namespace :api do
     namespace :v1 do
-      resources :tabs do
-        resources :toggles do
-          member do
-            patch :restore
-            patch :reset
-          end
-        end
-        
-        resources :shop_toggles, only: [:create, :show, :update, :destroy] do
-          member do
-            patch :restore
-            patch :reset
-          end
-        end
-        
-        resources :category_toggles, only: [:create, :show, :update, :destroy] do
-          member do
-            patch :restore
-            patch :reset
-          end
-        end
+      resources :toggles do
+        resources :tabs, only: [:create]
       end
+      resources :tabs, only: [:index, :show, :update, :destroy]
     end
   end
 end

@@ -1,0 +1,879 @@
+openapi: 3.0.3
+info:
+  title: Tabs and Toggles API
+  description: API for managing tabs and their associated toggles with soft delete functionality
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.example.com/api/v1
+    description: Production server
+
+tags:
+  - name: Tabs
+    description: Tab management operations
+  - name: Toggles
+    description: General toggle operations within tabs
+  - name: Shop Toggles
+    description: Shop-specific toggle operations
+  - name: Category Toggles
+    description: Category-specific toggle operations
+
+paths:
+  # Tabs endpoints
+  /tabs:
+    get:
+      tags:
+        - Tabs
+      summary: Get all tabs
+      description: Retrieve a list of all tabs
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tab'
+        '500':
+          description: Internal server error
+
+    post:
+      tags:
+        - Tabs
+      summary: Create a new tab
+      description: Create a new tab with the provided data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TabInput'
+      responses:
+        '201':
+          description: Tab created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tab'
+        '422':
+          description: Unprocessable entity
+        '500':
+          description: Internal server error
+
+  /tabs/{id}:
+    get:
+      tags:
+        - Tabs
+      summary: Get a specific tab
+      description: Retrieve a tab by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tab'
+        '404':
+          description: Tab not found
+
+    patch:
+      tags:
+        - Tabs
+      summary: Update a tab
+      description: Update an existing tab
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TabInput'
+      responses:
+        '200':
+          description: Tab updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tab'
+        '404':
+          description: Tab not found
+        '422':
+          description: Unprocessable entity
+
+    delete:
+      tags:
+        - Tabs
+      summary: Soft delete a tab
+      description: Soft delete a tab (mark as deleted without removing from database)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      responses:
+        '204':
+          description: Tab soft deleted successfully
+        '404':
+          description: Tab not found
+
+  # General Toggles endpoints
+  /tabs/{tab_id}/toggles:
+    get:
+      tags:
+        - Toggles
+      summary: Get all toggles for a tab
+      description: Retrieve all toggles associated with a specific tab
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Toggle'
+
+    post:
+      tags:
+        - Toggles
+      summary: Create a new toggle
+      description: Create a new toggle within a specific tab
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleInput'
+      responses:
+        '201':
+          description: Toggle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Toggle'
+
+  /tabs/{tab_id}/toggles/{id}:
+    get:
+      tags:
+        - Toggles
+      summary: Get a specific toggle
+      description: Retrieve a toggle by its ID within a tab
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Toggle ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Toggle'
+
+    patch:
+      tags:
+        - Toggles
+      summary: Update a toggle
+      description: Update an existing toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Toggle ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleInput'
+      responses:
+        '200':
+          description: Toggle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Toggle'
+
+    delete:
+      tags:
+        - Toggles
+      summary: Soft delete a toggle
+      description: Soft delete a toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Toggle ID
+      responses:
+        '204':
+          description: Toggle soft deleted successfully
+
+  /tabs/{tab_id}/toggles/{id}/restore:
+    patch:
+      tags:
+        - Toggles
+      summary: Restore a soft-deleted toggle
+      description: Restore a previously soft-deleted toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Toggle ID
+      responses:
+        '200':
+          description: Toggle restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Toggle'
+
+  /tabs/{tab_id}/toggles/{id}/reset:
+    patch:
+      tags:
+        - Toggles
+      summary: Reset toggle to default version
+      description: Reset a toggle to its default configuration
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Toggle ID
+      responses:
+        '200':
+          description: Toggle reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Toggle'
+
+  # Shop Toggles endpoints
+  /tabs/{tab_id}/shop_toggles:
+    post:
+      tags:
+        - Shop Toggles
+      summary: Create a new shop toggle
+      description: Create a new shop-specific toggle within a tab
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopToggleInput'
+      responses:
+        '201':
+          description: Shop toggle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopToggle'
+
+  /tabs/{tab_id}/shop_toggles/{id}:
+    get:
+      tags:
+        - Shop Toggles
+      summary: Get a specific shop toggle
+      description: Retrieve a shop toggle by its ID
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shop Toggle ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopToggle'
+
+    patch:
+      tags:
+        - Shop Toggles
+      summary: Update a shop toggle
+      description: Update an existing shop toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shop Toggle ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShopToggleInput'
+      responses:
+        '200':
+          description: Shop toggle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopToggle'
+
+    delete:
+      tags:
+        - Shop Toggles
+      summary: Soft delete a shop toggle
+      description: Soft delete a shop toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shop Toggle ID
+      responses:
+        '204':
+          description: Shop toggle soft deleted successfully
+
+  /tabs/{tab_id}/shop_toggles/{id}/restore:
+    patch:
+      tags:
+        - Shop Toggles
+      summary: Restore a soft-deleted shop toggle
+      description: Restore a previously soft-deleted shop toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shop Toggle ID
+      responses:
+        '200':
+          description: Shop toggle restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopToggle'
+
+  /tabs/{tab_id}/shop_toggles/{id}/reset:
+    patch:
+      tags:
+        - Shop Toggles
+      summary: Reset shop toggle to default version
+      description: Reset a shop toggle to its default configuration
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Shop Toggle ID
+      responses:
+        '200':
+          description: Shop toggle reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopToggle'
+
+  # Category Toggles endpoints
+  /tabs/{tab_id}/category_toggles:
+    post:
+      tags:
+        - Category Toggles
+      summary: Create a new category toggle
+      description: Create a new category-specific toggle within a tab
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryToggleInput'
+      responses:
+        '201':
+          description: Category toggle created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryToggle'
+
+  /tabs/{tab_id}/category_toggles/{id}:
+    get:
+      tags:
+        - Category Toggles
+      summary: Get a specific category toggle
+      description: Retrieve a category toggle by its ID
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Category Toggle ID
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryToggle'
+
+    patch:
+      tags:
+        - Category Toggles
+      summary: Update a category toggle
+      description: Update an existing category toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Category Toggle ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryToggleInput'
+      responses:
+        '200':
+          description: Category toggle updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryToggle'
+
+    delete:
+      tags:
+        - Category Toggles
+      summary: Soft delete a category toggle
+      description: Soft delete a category toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Category Toggle ID
+      responses:
+        '204':
+          description: Category toggle soft deleted successfully
+
+  /tabs/{tab_id}/category_toggles/{id}/restore:
+    patch:
+      tags:
+        - Category Toggles
+      summary: Restore a soft-deleted category toggle
+      description: Restore a previously soft-deleted category toggle
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Category Toggle ID
+      responses:
+        '200':
+          description: Category toggle restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryToggle'
+
+  /tabs/{tab_id}/category_toggles/{id}/reset:
+    patch:
+      tags:
+        - Category Toggles
+      summary: Reset category toggle to default version
+      description: Reset a category toggle to its default configuration
+      parameters:
+        - name: tab_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Tab ID
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Category Toggle ID
+      responses:
+        '200':
+          description: Category toggle reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryToggle'
+
+components:
+  schemas:
+    Tab:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the tab
+        title:
+          type: string
+          description: Title of the tab
+        description:
+          type: string
+          description: Description of the tab
+        active:
+          type: boolean
+          description: Whether the tab is active
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft deletion timestamp
+      required:
+        - id
+        - title
+
+    TabInput:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the tab
+        description:
+          type: string
+          description: Description of the tab
+        active:
+          type: boolean
+          description: Whether the tab is active
+      required:
+        - title
+
+    Toggle:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the toggle
+        tab_id:
+          type: integer
+          description: ID of the parent tab
+        name:
+          type: string
+          description: Name of the toggle
+        enabled:
+          type: boolean
+          description: Whether the toggle is enabled
+        config:
+          type: object
+          description: Configuration settings for the toggle
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft deletion timestamp
+      required:
+        - id
+        - tab_id
+        - name
+
+    ToggleInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the toggle
+        enabled:
+          type: boolean
+          description: Whether the toggle is enabled
+        config:
+          type: object
+          description: Configuration settings for the toggle
+      required:
+        - name
+
+    ShopToggle:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the shop toggle
+        tab_id:
+          type: integer
+          description: ID of the parent tab
+        shop_id:
+          type: integer
+          description: ID of the associated shop
+        name:
+          type: string
+          description: Name of the shop toggle
+        enabled:
+          type: boolean
+          description: Whether the shop toggle is enabled
+        config:
+          type: object
+          description: Configuration settings for the shop toggle
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft deletion timestamp
+      required:
+        - id
+        - tab_id
+        - shop_id
+        - name
+
+    ShopToggleInput:
+      type: object
+      properties:
+        shop_id:
+          type: integer
+          description: ID of the associated shop
+        name:
+          type: string
+          description: Name of the shop toggle
+        enabled:
+          type: boolean
+          description: Whether the shop toggle is enabled
+        config:
+          type: object
+          description: Configuration settings for the shop toggle
+      required:
+        - shop_id
+        - name
+
+    CategoryToggle:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the category toggle
+        tab_id:
+          type: integer
+          description: ID of the parent tab
+        category_id:
+          type: integer
+          description: ID of the associated category
+        name:
+          type: string
+          description: Name of the category toggle
+        enabled:
+          type: boolean
+          description: Whether the category toggle is enabled
+        config:
+          type: object
+          description: Configuration settings for the category toggle
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft deletion timestamp
+      required:
+        - id
+        - tab_id
+        - category_id
+        - name
+
+    CategoryToggleInput:
+      type: object
+      properties:
+        category_id:
+          type: integer
+          description: ID of the associated category
+        name:
+          type: string
+          description: Name of the category toggle
+        enabled:
+          type: boolean
+          description: Whether the category toggle is enabled
+        config:
+          type: object
+          description: Configuration settings for the category toggle
+      required:
+        - category_id
+        - name
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: array
+          items:
+            type: string
+          description: Additional error details

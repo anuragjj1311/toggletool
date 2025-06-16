@@ -1,0 +1,84 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">New Toggle</h1>
+
+    <%= form_with(model: @toggle, class: "space-y-6") do |form| %>
+      <% if @toggle.errors.any? || @association.errors.any? %>
+        <div class="bg-red-50 p-4 rounded-lg mb-6">
+          <h2 class="text-red-800 font-medium mb-2">
+            <%= pluralize(@toggle.errors.count + @association.errors.count, "error") %> prohibited this toggle from being saved:
+          </h2>
+          <ul class="list-disc list-inside text-red-600">
+            <% @toggle.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+            <% @association.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="space-y-4">
+        <!-- Title -->
+        <div>
+          <%= form.label :title, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_field :title, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- Toggle Type -->
+        <div>
+          <%= form.label :toggle_type, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.select :toggle_type, @toggle_types, {}, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- Tab Selection -->
+        <div>
+          <%= form.label :tab_id, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.select :tab_id, @tabs.map { |tab| [tab.title, tab.id] }, {}, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- Image URL -->
+        <div>
+          <%= form.label :image_url, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_field :image_url, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- Start Date -->
+        <div>
+          <%= form.label :start_date, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.date_field :start_date, value: @association.start_date, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- End Date -->
+        <div>
+          <%= form.label :end_date, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.date_field :end_date, value: @association.end_date, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- Regions -->
+        <div>
+          <%= form.label :regions, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_field :regions, value: @association.regions&.join(','), placeholder: "Comma separated", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- Link Type -->
+        <div>
+          <%= form.label :link_type, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.select :link_type, @link_types, {}, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+
+        <!-- URL -->
+        <div>
+          <%= form.label :url, class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_field :url, name: "toggle[route_info][url]", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm" %>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end space-x-4">
+        <%= link_to "Cancel", toggles_path, class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+        <%= form.submit "Create Toggle", class: "px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+      </div>
+    <% end %>
+  </div>
+</div> 
