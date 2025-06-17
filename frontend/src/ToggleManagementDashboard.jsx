@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from './components/common/Button';
 import { Modal } from './components/common/Modal';
@@ -11,7 +11,16 @@ import { useToggleData } from './hooks/useToggleData';
 import { useToggleForm } from './hooks/useToggleForm';
 
 const ToggleManagementDashboard = () => {
-  const { tabs, config, loading, error, success, fetchInitialData, showNotification } = useToggleData();
+  const { 
+    tabs, 
+    config, 
+    loading, 
+    error, 
+    success, 
+    fetchInitialData, 
+    showNotification 
+  } = useToggleData();
+
   const { 
     showModal, 
     modalType, 
@@ -24,6 +33,22 @@ const ToggleManagementDashboard = () => {
     handleRegionChange 
   } = useToggleForm();
 
+  useEffect(() => {
+    console.log('Dashboard mounted');
+    console.log('Initial config:', config);
+    console.log('Initial tabs:', tabs);
+  }, []);
+
+  useEffect(() => {
+    console.log('Config updated:', config);
+  }, [config]);
+
+  useEffect(() => {
+    if (error) {
+      console.error('Dashboard error:', error);
+    }
+  }, [error]);
+
   const getTabIdByName = (tabName) => {
     const tabMapping = { 'Shop': 1, 'Category': 2 };
     return tabMapping[tabName] || 1;
@@ -32,6 +57,7 @@ const ToggleManagementDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log('Submitting form with data:', formData);
       const submitData = { toggle: formData };
       const tabId = getTabIdByName(selectedTab || Object.keys(tabs)[0]);
       
@@ -48,7 +74,6 @@ const ToggleManagementDashboard = () => {
     if (window.confirm('Are you sure you want to delete this toggle?')) {
       try {
         const tabId = getTabIdByName(tabName);
-        // await apiService.deleteToggle(tabId, toggleId);
         showNotification('Toggle deleted successfully!');
         fetchInitialData();
       } catch (error) {
@@ -61,7 +86,6 @@ const ToggleManagementDashboard = () => {
     if (window.confirm('Are you sure you want to reset this toggle to default?')) {
       try {
         const tabId = getTabIdByName(tabName);
-        // await apiService.resetToggle(tabId, toggleId);
         showNotification('Toggle reset successfully!');
         fetchInitialData();
       } catch (error) {
@@ -72,6 +96,23 @@ const ToggleManagementDashboard = () => {
 
   if (loading) {
     return <LoadingSpinner message="Loading toggles..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchInitialData}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const getModalTitle = () => {

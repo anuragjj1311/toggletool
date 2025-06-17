@@ -25,7 +25,7 @@ export const TabSection = ({
             onClick={() => onCreateToggle(tabName)}
             icon={Plus}
           >
-            Add Toggle
+            Add Tab
           </Button>
         </div>
       </div>

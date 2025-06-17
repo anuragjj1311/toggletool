@@ -3,7 +3,7 @@ import { toggleService } from '../services/toggleService';
 import { tabService } from '../services/tabService';
 
 export const useToggleData = () => {
-  const [tabs, setTabs] = useState({});
+  const [toggles, setToggles] = useState([]);
   const [config, setConfig] = useState({
     tab_types: [],
     toggle_types: [],
@@ -30,12 +30,30 @@ export const useToggleData = () => {
     }
   };
 
-  const fetchAllTabs = async () => {
+  const fetchAllData = async () => {
     try {
       const data = await tabService.getTabsConfig();
-      setTabs(data);
+      // Restructure data to have toggles at the top level
+      const allToggles = [];
+      Object.entries(data.all_tabs || {}).forEach(([tabName, togglesInTab]) => {
+        togglesInTab.forEach(toggle => {
+          // Find if toggle already exists
+          const existingToggle = allToggles.find(t => t.id === toggle.id);
+          if (existingToggle) {
+            // Add tab to existing toggle
+            existingToggle.tabs.push(tabName);
+          } else {
+            // Create new toggle with initial tab
+            allToggles.push({
+              ...toggle,
+              tabs: [tabName]
+            });
+          }
+        });
+      });
+      setToggles(allToggles);
     } catch (error) {
-      console.error('Error fetching tabs:', error);
+      console.error('Error fetching data:', error);
       throw error;
     }
   };
@@ -44,7 +62,7 @@ export const useToggleData = () => {
     try {
       setLoading(true);
       setError(null);
-      await Promise.all([fetchConfig(), fetchAllTabs()]);
+      await Promise.all([fetchConfig(), fetchAllData()]);
     } catch (error) {
       setError('Failed to load data. Please try again.');
     } finally {
@@ -67,7 +85,7 @@ export const useToggleData = () => {
   }, []);
 
   return {
-    tabs,
+    toggles,
     config,
     loading,
     error,

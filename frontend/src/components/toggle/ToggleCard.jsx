@@ -59,7 +59,11 @@ export const ToggleCard = ({
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Link size={14} />
           <span className="truncate">
-            {toggle.links?.default || Object.values(toggle.links || {})[0] || 'No link'}
+            {typeof toggle.links?.default === 'string'
+              ? toggle.links.default
+              : typeof Object.values(toggle.links || {})[0] === 'string'
+                ? Object.values(toggle.links || {})[0]
+                : 'No link'}
           </span>
         </div>
       </div>
