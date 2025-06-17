@@ -9,6 +9,7 @@ import { ToggleForm } from './components/toggle/ToggleForm';
 import { EmptyState } from './components/toggle/EmptyState';
 import { useToggleData } from './hooks/useToggleData';
 import { useToggleForm } from './hooks/useToggleForm';
+import { toggleService } from './services/toggleService';
 
 const ToggleManagementDashboard = () => {
   const { 
@@ -56,11 +57,41 @@ const ToggleManagementDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.start_date || !formData.end_date) {
+      showNotification('Start date and End date are required.', 'error');
+      return;
+    }
     try {
-      console.log('Submitting form with data:', formData);
-      const submitData = { toggle: formData };
-      const tabId = getTabIdByName(selectedTab || formData.tabs[0]);
-      
+      console.log('FormData before submission:', formData); 
+      if (modalType === 'create') {
+        const tabIndex = config.tab_types.findIndex(
+          t => t === formData.tab_type
+        );
+        const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
+        await toggleService.createToggle(tabId, {toggle: formData});
+      } else if (modalType === 'createTab') {
+        const tabIndex = config.tab_types.findIndex(
+          t => t === formData.tab_type
+        );
+        const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
+        const submitData = {
+          toggle: {
+            title: formData.title,
+            toggle_type: formData.toggle_type,
+            image_url: formData.image_url,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            regions: formData.regions,
+            route_info: formData.route_info
+          },
+          tab_type_id: tabId
+        };
+        console.log('Submitting createTab with data:', submitData);
+        await toggleService.createToggle(tabId, submitData);
+      } else {
+        const submitData = { toggle: formData };
+        console.log('Submitting form with data:', submitData);
+      }
       showNotification(`Toggle ${modalType}d successfully!`);
       closeModal();
       fetchInitialData();
@@ -179,6 +210,7 @@ const ToggleManagementDashboard = () => {
           onRegionChange={handleRegionChange}
           onSubmit={handleSubmit}
           onCancel={closeModal}
+          selectedToggle={selectedToggle}
         />
       </Modal>
     </div>

@@ -9,6 +9,7 @@ export const Input = ({
   required = false, 
   disabled = false,
   className = '',
+  error = '',
   ...props 
 }) => {
   return (
@@ -24,7 +25,8 @@ export const Input = ({
         required={required}
         disabled={disabled}
         className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
-          disabled ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-200'
+          disabled ? 'bg-gray-100 cursor-not-allowed' : 
+          error ? 'border-red-300 focus:ring-red-500' : 'border-gray-200'
         } ${className}`}
         {...props}
       />

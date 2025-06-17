@@ -40,14 +40,14 @@ export const useToggleForm = () => {
   const openModal = (type, toggle = null) => {
     setModalType(type);
     setSelectedToggle(toggle);
-    
+    console.log('toggle passed to openModal:', toggle);
     if (type === 'update' && toggle) {
       setFormData({
         title: toggle.title,
         toggle_type: toggle.type,
         image_url: toggle.image_url || '',
-        start_date: toggle.start_date,
-        end_date: toggle.end_date,
+        start_date: toggle.start_date || '',
+        end_date: toggle.end_date || '',
         regions: toggle.regions || [],
         route_info: {
           link_type: toggle.link_type,
@@ -58,7 +58,17 @@ export const useToggleForm = () => {
       });
     } else if (type === 'createTab' && toggle) {
       setFormData({
-        ...formData,
+        title: toggle.title,
+        toggle_type: toggle.type,
+        image_url: toggle.image_url || '',
+        start_date: toggle.start_date || '',
+        end_date: toggle.end_date || '',
+        regions: toggle.regions || [],
+        route_info: {
+          link_type: toggle.link_type,
+          url: toggle.links || {}
+        },
+        initial_tab: '',
         tab_type: '',
         toggle_id: toggle.id
       });
@@ -76,7 +86,7 @@ export const useToggleForm = () => {
   };
 
   const handleInputChange = (field, value) => {
-    if (field.includes('.')) {
+      console.log('Updating field:', field, 'with value:', value);    if (field.includes('.')) {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
         ...prev,

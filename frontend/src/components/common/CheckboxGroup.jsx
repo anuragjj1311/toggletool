@@ -22,16 +22,16 @@ export const CheckboxGroup = ({
       <div className="grid grid-cols-3 gap-2">
         {options.map(option => (
           <label 
-            key={option} 
+            key={option.value} 
             className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-xl hover:border-green-300 transition-colors duration-200 cursor-pointer"
           >
             <input
               type="checkbox"
-              checked={selectedValues.includes(option)}
-              onChange={() => handleChange(option)}
+              checked={selectedValues.includes(option.value)}
+              onChange={() => handleChange(option.value)}
               className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
             />
-            <span className="text-sm font-medium text-gray-700">{option}</span>
+            <span className="text-sm font-medium text-gray-700">{option.label}</span>
           </label>
         ))}
       </div>

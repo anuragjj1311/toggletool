@@ -1,4 +1,5 @@
 import api from './api';
+import { apiService } from './api';
 
 export const toggleService = {
   // Get available toggle options
@@ -10,6 +11,12 @@ export const toggleService = {
   // Get a specific toggle
   getToggle: async (toggleId) => {
     const response = await api.get(`/toggles/${toggleId}`);
+    return response.data;
+  },
+
+  // Create a new toggle
+  createToggle: async (tabId, toggleData) => {
+    const response = await apiService.createToggle(tabId, toggleData);
     return response.data;
   },
 

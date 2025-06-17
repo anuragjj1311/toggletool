@@ -33,7 +33,6 @@ export const useToggleData = () => {
   const fetchAllData = async () => {
     try {
       const data = await tabService.getTabsConfig();
-      // Restructure data to have toggles at the top level
       const allToggles = [];
       Object.entries(data.all_tabs || {}).forEach(([tabName, togglesInTab]) => {
         togglesInTab.forEach(toggle => {
