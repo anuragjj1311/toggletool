@@ -15,7 +15,9 @@ export const useToggleForm = () => {
     route_info: {
       link_type: 'DIRECT',
       url: {}
-    }
+    },
+    initial_tab: '',
+    tab_type: ''
   });
 
   const resetFormData = () => {
@@ -29,14 +31,15 @@ export const useToggleForm = () => {
       route_info: {
         link_type: 'DIRECT',
         url: {}
-      }
+      },
+      initial_tab: '',
+      tab_type: ''
     });
   };
 
-  const openModal = (type, toggle = null, tabName = null) => {
+  const openModal = (type, toggle = null) => {
     setModalType(type);
     setSelectedToggle(toggle);
-    setSelectedTab(tabName);
     
     if (type === 'update' && toggle) {
       setFormData({
@@ -49,20 +52,15 @@ export const useToggleForm = () => {
         route_info: {
           link_type: toggle.link_type,
           url: toggle.links || {}
-        }
+        },
+        initial_tab: toggle.tabs[0] || '',
+        tab_type: ''
       });
     } else if (type === 'createTab' && toggle) {
       setFormData({
-        title: toggle.title,
-        toggle_type: toggle.type,
-        image_url: toggle.image_url || '',
-        start_date: '',
-        end_date: '',
-        regions: [],
-        route_info: {
-          link_type: 'DIRECT',
-          url: {}
-        }
+        ...formData,
+        tab_type: '',
+        toggle_id: toggle.id
       });
     } else {
       resetFormData();

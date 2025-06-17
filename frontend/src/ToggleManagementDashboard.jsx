@@ -4,7 +4,7 @@ import { Button } from './components/common/Button';
 import { Modal } from './components/common/Modal';
 import { Notification } from './components/common/Notification';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
-import { TabSection } from './components/toggle/TabSection';
+import { ToggleSection } from './components/toggle/ToggleSection';
 import { ToggleForm } from './components/toggle/ToggleForm';
 import { EmptyState } from './components/toggle/EmptyState';
 import { useToggleData } from './hooks/useToggleData';
@@ -12,7 +12,7 @@ import { useToggleForm } from './hooks/useToggleForm';
 
 const ToggleManagementDashboard = () => {
   const { 
-    tabs, 
+    toggles, 
     config, 
     loading, 
     error, 
@@ -36,7 +36,7 @@ const ToggleManagementDashboard = () => {
   useEffect(() => {
     console.log('Dashboard mounted');
     console.log('Initial config:', config);
-    console.log('Initial tabs:', tabs);
+    console.log('Initial toggles:', toggles);
   }, []);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const ToggleManagementDashboard = () => {
     try {
       console.log('Submitting form with data:', formData);
       const submitData = { toggle: formData };
-      const tabId = getTabIdByName(selectedTab || Object.keys(tabs)[0]);
+      const tabId = getTabIdByName(selectedTab || formData.tabs[0]);
       
       showNotification(`Toggle ${modalType}d successfully!`);
       closeModal();
@@ -70,10 +70,9 @@ const ToggleManagementDashboard = () => {
     }
   };
 
-  const handleDelete = async (toggleId, tabName) => {
+  const handleDelete = async (toggleId) => {
     if (window.confirm('Are you sure you want to delete this toggle?')) {
       try {
-        const tabId = getTabIdByName(tabName);
         showNotification('Toggle deleted successfully!');
         fetchInitialData();
       } catch (error) {
@@ -82,10 +81,9 @@ const ToggleManagementDashboard = () => {
     }
   };
 
-  const handleReset = async (toggleId, tabName) => {
+  const handleReset = async (toggleId) => {
     if (window.confirm('Are you sure you want to reset this toggle to default?')) {
       try {
-        const tabId = getTabIdByName(tabName);
         showNotification('Toggle reset successfully!');
         fetchInitialData();
       } catch (error) {
@@ -149,20 +147,18 @@ const ToggleManagementDashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {Object.keys(tabs).length === 0 ? (
+        {toggles.length === 0 ? (
           <EmptyState onCreateToggle={() => openModal('create')} />
         ) : (
           <div className="space-y-8">
-            {Object.entries(tabs).map(([tabName, toggles]) => (
-              <TabSection
-                key={tabName}
-                tabName={tabName}
-                toggles={toggles}
-                onCreateToggle={(tabName) => openModal('create', null, tabName)}
-                onEditToggle={(toggle, tabName) => openModal('update', toggle, tabName)}
+            {toggles.map((toggle) => (
+              <ToggleSection
+                key={toggle.id}
+                toggle={toggle}
+                onCreateTab={(toggle) => openModal('createTab', toggle)}
+                onEditToggle={(toggle) => openModal('update', toggle)}
                 onDeleteToggle={handleDelete}
                 onResetToggle={handleReset}
-                onCreateTab={(toggle, tabName) => openModal('createTab', toggle, tabName)}
               />
             ))}
           </div>
