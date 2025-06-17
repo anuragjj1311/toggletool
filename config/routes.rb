@@ -20,6 +20,7 @@ Rails.application.routes.draw do
           patch :reset
         end
       end
+      get 'configs', to: 'configs#index'
     end
   end
 end

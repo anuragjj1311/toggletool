@@ -47,10 +47,10 @@ class Api::V1::TogglesController < ApplicationController
 
   def available_options
     render json: {
-      tab_types: Tab::VALID_TAB_TYPES,
-      toggle_types: Toggle::VALID_TOGGLE_TYPES,
-      link_types: TabToggleAssociation::VALID_LINK_TYPES,
-      regions: Tab::VALID_REGIONS
+      toggle_types: ['SHOP', 'CATEGORY'],
+      link_types: ['DIRECT', 'ACTIVITY'],
+      regions: Rails.application.config.regions,
+      tab_types: Rails.application.config.tab_types
     }
   end
 
