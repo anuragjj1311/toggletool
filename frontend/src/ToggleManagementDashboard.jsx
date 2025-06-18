@@ -102,24 +102,22 @@ const ToggleManagementDashboard = () => {
   };
 
   const handleDelete = async (toggleId) => {
-    if (window.confirm('Are you sure you want to delete this toggle?')) {
-      try {
-        showNotification('Toggle deleted successfully!');
-        fetchInitialData();
-      } catch (error) {
-        showNotification('Error deleting toggle. Please try again.', 'error');
-      }
+    try {
+      await toggleService.deleteToggle(toggleId);
+      showNotification('Toggle disabled successfully!');
+      fetchInitialData();
+    } catch (error) {
+      showNotification('Error disabling toggle. Please try again.', 'error');
     }
   };
 
-  const handleReset = async (toggleId) => {
-    if (window.confirm('Are you sure you want to reset this toggle to default?')) {
-      try {
-        showNotification('Toggle reset successfully!');
-        fetchInitialData();
-      } catch (error) {
-        showNotification('Error resetting toggle. Please try again.', 'error');
-      }
+  const handleRestore = async (toggleId) => {
+    try {
+      await toggleService.restoreToggle(toggleId);
+      showNotification('Toggle enabled successfully!');
+      fetchInitialData();
+    } catch (error) {
+      showNotification('Error enabling toggle. Please try again.', 'error');
     }
   };
 
@@ -189,7 +187,7 @@ const ToggleManagementDashboard = () => {
                 onCreateTab={(toggle) => openModal('createTab', toggle)}
                 onEditToggle={(toggle) => openModal('update', toggle)}
                 onDeleteToggle={handleDelete}
-                onResetToggle={handleReset}
+                onRestoreToggle={handleRestore}
               />
             ))}
           </div>

@@ -8,10 +8,21 @@ export const TabSection = ({
   toggles, 
   onCreateToggle, 
   onEditToggle, 
-  onDeleteToggle, 
-  onResetToggle, 
+  onDeleteToggle,
+  onRestoreToggle,
   onCreateTab 
 }) => {
+  const handleToggleStatus = (toggleId, tabName) => {
+    const toggle = toggles.find(t => t.id === toggleId);
+    if (!toggle) return;
+
+    if (toggle.deleted_at !== null) {
+      onRestoreToggle(toggleId, tabName);
+    } else {
+      onDeleteToggle(toggleId, tabName);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-green-100">
       <div className="bg-gradient-to-r from-green-600 to-lime-600 p-6">
@@ -38,8 +49,7 @@ export const TabSection = ({
               toggle={toggle}
               tabName={tabName}
               onEdit={onEditToggle}
-              onDelete={onDeleteToggle}
-              onReset={onResetToggle}
+              onToggleStatus={handleToggleStatus}
               onCreateTab={onCreateTab}
             />
           ))}

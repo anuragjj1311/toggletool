@@ -68,57 +68,105 @@ export const ToggleForm = ({
     label: type
   }));
 
-  // For createTab, all toggle fields are read-only or hidden, only tab_type is editable
+  // For createTab, only title is read-only, other fields are editable
   if (modalType === 'createTab') {
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Show toggle fields as read-only */}
         <Input
           label="Title"
           value={selectedToggle ? selectedToggle.title : formData.title}
           readOnly
         />
-        <Input
+        <Select
           label="Toggle Type"
           value={formData.toggle_type}
-          readOnly
+          onChange={(e) => onInputChange('toggle_type', e.target.value)}
+          options={toggleTypeOptions}
+          required
         />
         <Input
           label="Image URL"
+          type="url"
           value={formData.image_url}
-          readOnly
+          onChange={(e) => onInputChange('image_url', e.target.value)}
+          placeholder="https://example.com/image.jpg"
         />
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Start Date"
-            value={formData.start_date}
-            readOnly
-          />
-          <Input
-            label="End Date"
-            value={formData.end_date}
-            readOnly
-          />
+          <div>
+            <Input
+              label="Start Date"
+              type="date"
+              value={formData.start_date}
+              onChange={(e) => {
+                onInputChange('start_date', e.target.value);
+                setErrors(prev => ({ ...prev, start_date: '' }));
+              }}
+              required
+              error={errors.start_date}
+            />
+            {errors.start_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
+            )}
+          </div>
+          <div>
+            <Input
+              label="End Date"
+              type="date"
+              value={formData.end_date}
+              onChange={(e) => {
+                onInputChange('end_date', e.target.value);
+                setErrors(prev => ({ ...prev, end_date: '' }));
+              }}
+              required
+              error={errors.end_date}
+            />
+            {errors.end_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2 w-full">Regions</label>
-          {formData.regions?.map(region => (
-            <span key={region} className="bg-gray-100 px-2 py-1 rounded text-xs">
-              {region}
-            </span>
-          ))}
-        </div>
-        <Input
+        <CheckboxGroup
+          label="Regions"
+          options={regionOptions}
+          selectedValues={formData.regions}
+          onChange={onRegionChange}
+        />
+        <Select
           label="Link Type"
           value={formData.route_info.link_type}
-          readOnly
+          onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
+          options={linkTypeOptions}
+          required
         />
-        <Input
-          label="Link URL"
-          value={formData.route_info.url?.default || ''}
-          readOnly
-        />
-        {/* Tab selection dropdown */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">URL Configuration</label>
+          <div className="space-y-3">
+            {formData.route_info.link_type === 'DIRECT' ? (
+              <Input
+                type="url"
+                value={formData.route_info.url.default || ''}
+                onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
+                placeholder="https://example.com"
+                required
+              />
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  type="url"
+                  value={formData.route_info.url.web || ''}
+                  onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, web: e.target.value })}
+                  placeholder="Web URL: https://example.com"
+                />
+                <Input
+                  type="text"
+                  value={formData.route_info.url.mobile || ''}
+                  onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, mobile: e.target.value })}
+                  placeholder="Mobile URL: app://example"
+                />
+              </div>
+            )}
+          </div>
+        </div>
         <Select
           label="Select Tab Type"
           value={formData.tab_type}
