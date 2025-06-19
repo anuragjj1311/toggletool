@@ -4,6 +4,7 @@ import { tabService } from '../services/tabService';
 
 export const useToggleData = () => {
   const [toggles, setToggles] = useState([]);
+  const [allTabs, setAllTabs] = useState({});
   const [config, setConfig] = useState({
     tab_types: [],
     toggle_types: [],
@@ -33,16 +34,17 @@ export const useToggleData = () => {
   const fetchAllData = async () => {
     try {
       const data = await tabService.getTabsConfig();
+      setAllTabs(data.all_tabs || {});
       const allToggles = [];
       Object.entries(data.all_tabs || {}).forEach(([tabName, togglesInTab]) => {
         togglesInTab.forEach(toggle => {
-          // Find if toggle already exists
+
           const existingToggle = allToggles.find(t => t.id === toggle.id);
           if (existingToggle) {
-            // Add tab to existing toggle
+
             existingToggle.tabs.push(tabName);
           } else {
-            // Create new toggle with initial tab
+
             allToggles.push({
               ...toggle,
               tabs: [tabName]
@@ -63,7 +65,7 @@ export const useToggleData = () => {
       setError(null);
       await Promise.all([fetchConfig(), fetchAllData()]);
     } catch (error) {
-      setError('Failed to load data. Please try again.');
+      setError('Failed to load data. Please try again.',error);
     } finally {
       setLoading(false);
     }
@@ -85,6 +87,7 @@ export const useToggleData = () => {
 
   return {
     toggles,
+    allTabs,
     config,
     loading,
     error,

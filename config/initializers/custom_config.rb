@@ -16,4 +16,17 @@ Rails.application.config.regions = %w[
   Chennai
   Kolkata
   Hyderabad
+  Bihar
+  Gujarat
+  UttarPradesh
+  MadhyaPradesh
+  WestBengal
+  Kerala
+  Assam
+  Odisha
+  Uttarakhand
+  Jharkhand
+  Chhattisgarh
+  Telangana
+  AndhraPradesh
 ].freeze 

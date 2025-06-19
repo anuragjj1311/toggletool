@@ -177,9 +177,66 @@ class Api::V1::TogglesController < ApplicationController
   end
 
   def restore
+    # If tab_id is provided, restore specific association
+    if params[:tab_id].present?
+      @association = @tab.tab_toggle_associations.find_by!(linked_toggle: @toggle)
+      @toggle.restore!
+      render_success(format_association_response(@association), 'Toggle restored successfully')
+    else
+      # If no tab_id, restore all associations for this toggle
+      restore_all_associations
+    end
+  end
+
+  def restore_all_associations
     @toggle.restore!
-    @association = @tab.tab_toggle_associations.find_by!(linked_toggle: @toggle)
-    render_success(format_association_response(@association), 'Toggle restored successfully')
+
+    # Ensure all tab associations exist for this toggle
+    Tab.find_each do |tab|
+      association = tab.tab_toggle_associations.find_by(toggle_id: @toggle.id)
+      unless association
+        # Create association with default values
+        tab.tab_toggle_associations.create!(
+          toggle_id: @toggle.id,
+          toggle_type: @toggle.toggle_type,
+          link_type: @toggle.link_generator&.type == 'ActivityLink' ? 'ACTIVITY' : 'DIRECT',
+          start_date: tab.start_date,
+          end_date: tab.end_date,
+          regions: tab.regions || []
+        )
+      end
+    end
+
+    # Get all associations for this toggle
+    @associations = @toggle.tab_toggle_associations.includes(:tab)
+
+    if @associations.empty?
+      render_success(
+        { 
+          toggle_id: @toggle.id,
+          title: @toggle.title,
+          restored_tabs: []
+        }, 
+        'Toggle restored but no tab associations found'
+      )
+    else
+      tabs_data = @associations.map do |association|
+        {
+          tab_id: association.tab.id,
+          tab_title: association.tab.title,
+          association_id: association.id
+        }
+      end
+      
+      render_success(
+        {
+          toggle_id: @toggle.id,
+          title: @toggle.title,
+          restored_tabs: tabs_data
+        },
+        "Toggle restored successfully for #{@associations.count} tab(s)"
+      )
+    end
   end
 
   def reset

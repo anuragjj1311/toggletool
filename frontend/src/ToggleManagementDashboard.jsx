@@ -14,6 +14,7 @@ import { toggleService } from './services/toggleService';
 const ToggleManagementDashboard = () => {
   const { 
     toggles, 
+    allTabs,
     config, 
     loading, 
     error, 
@@ -26,7 +27,6 @@ const ToggleManagementDashboard = () => {
     showModal, 
     modalType, 
     selectedToggle, 
-    selectedTab, 
     formData, 
     openModal, 
     closeModal, 
@@ -38,7 +38,7 @@ const ToggleManagementDashboard = () => {
     console.log('Dashboard mounted');
     console.log('Initial config:', config);
     console.log('Initial toggles:', toggles);
-  }, []);
+  }, [config, toggles]);
 
   useEffect(() => {
     console.log('Config updated:', config);
@@ -49,11 +49,6 @@ const ToggleManagementDashboard = () => {
       console.error('Dashboard error:', error);
     }
   }, [error]);
-
-  const getTabIdByName = (tabName) => {
-    const tabMapping = { 'Shop': 1, 'Category': 2 };
-    return tabMapping[tabName] || 1;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,9 +83,24 @@ const ToggleManagementDashboard = () => {
         };
         console.log('Submitting createTab with data:', submitData);
         await toggleService.createToggle(tabId, submitData);
-      } else {
-        const submitData = { toggle: formData };
-        console.log('Submitting form with data:', submitData);
+      } else if (modalType === 'update' && selectedToggle) {
+        const tabIndex = config.tab_types.findIndex(
+          t => t === formData.tab_type
+        );
+        const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
+        const submitData = {
+          toggle: {
+            title: formData.title,
+            toggle_type: formData.toggle_type,
+            image_url: formData.image_url,
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            regions: formData.regions,
+            route_info: formData.route_info
+          }
+        };
+        console.log('Updating toggle with data:', submitData);
+        await toggleService.updateToggle(selectedToggle.id, submitData, tabId);
       }
       showNotification(`Toggle ${modalType}d successfully!`);
       closeModal();
@@ -106,8 +116,8 @@ const ToggleManagementDashboard = () => {
       await toggleService.deleteToggle(toggleId);
       showNotification('Toggle disabled successfully!');
       fetchInitialData();
-    } catch (error) {
-      showNotification('Error disabling toggle. Please try again.', 'error');
+    } catch (err) {
+      showNotification('Error disabling toggle. Please try again.', err);
     }
   };
 
@@ -116,8 +126,8 @@ const ToggleManagementDashboard = () => {
       await toggleService.restoreToggle(toggleId);
       showNotification('Toggle enabled successfully!');
       fetchInitialData();
-    } catch (error) {
-      showNotification('Error enabling toggle. Please try again.', 'error');
+    } catch (err) {
+      showNotification('Error enabling toggle. Please try again.', err);
     }
   };
 
@@ -145,7 +155,7 @@ const ToggleManagementDashboard = () => {
   const getModalTitle = () => {
     switch (modalType) {
       case 'create': return 'Create New Toggle';
-      case 'update': return 'Update Toggle';
+      case 'update': return 'Update Tab';
       case 'createTab': return 'Create Tab for Toggle';
       default: return 'Toggle Form';
     }
@@ -184,6 +194,7 @@ const ToggleManagementDashboard = () => {
               <ToggleSection
                 key={toggle.id}
                 toggle={toggle}
+                allTabs={allTabs}
                 onCreateTab={(toggle) => openModal('createTab', toggle)}
                 onEditToggle={(toggle) => openModal('update', toggle)}
                 onDeleteToggle={handleDelete}

@@ -72,6 +72,14 @@ export const ToggleForm = ({
   if (modalType === 'createTab') {
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
+        <Select
+          label="Select Tab Type"
+          value={formData.tab_type}
+          onChange={e => onInputChange('tab_type', e.target.value)}
+          options={tabTypeOptions.filter(option => !selectedToggle?.tabs?.includes(option.value))}
+          placeholder="Select tab type"
+          required
+        />
         <Input
           label="Title"
           value={selectedToggle ? selectedToggle.title : formData.title}
@@ -149,6 +157,11 @@ export const ToggleForm = ({
                 placeholder="https://example.com"
                 required
               />
+            ) : formData.route_info.link_type === 'ACTIVITY' ? (
+              <ActivityLinksInput
+                value={formData.route_info.url}
+                onChange={linksObj => onInputChange('route_info.url', linksObj)}
+              />
             ) : (
               <div className="space-y-3">
                 <Input
@@ -167,14 +180,6 @@ export const ToggleForm = ({
             )}
           </div>
         </div>
-        <Select
-          label="Select Tab Type"
-          value={formData.tab_type}
-          onChange={e => onInputChange('tab_type', e.target.value)}
-          options={tabTypeOptions.filter(option => !selectedToggle?.tabs?.includes(option.value))}
-          placeholder="Select tab type"
-          required
-        />
         <div className="flex gap-4 pt-4 border-t">
           <Button 
             type="button" 
@@ -204,6 +209,7 @@ export const ToggleForm = ({
         value={formData.title}
         onChange={(e) => onInputChange('title', e.target.value)}
         placeholder="Enter toggle title"
+        readOnly={modalType === 'update'}
         required
       />
       <Select
@@ -279,6 +285,11 @@ export const ToggleForm = ({
               placeholder="https://example.com"
               required
             />
+          ) : formData.route_info.link_type === 'ACTIVITY' ? (
+            <ActivityLinksInput
+              value={formData.route_info.url}
+              onChange={linksObj => onInputChange('route_info.url', linksObj)}
+            />
           ) : (
             <div className="space-y-3">
               <Input
@@ -326,5 +337,77 @@ export const ToggleForm = ({
         </Button>
       </div>
     </form>
+  );
+};
+
+const ActivityLinksInput = ({ value = {}, onChange }) => {
+  const [pairs, setPairs] = React.useState(
+    Object.entries(value).length > 0
+      ? Object.entries(value).map(([key, url]) => ({ key, url }))
+      : [{ key: '', url: '' }]
+  );
+
+  React.useEffect(() => {
+    // Convert pairs to object and call onChange
+    const obj = {};
+    pairs.forEach(({ key, url }) => {
+      if (key) obj[key] = url;
+    });
+    onChange(obj);
+    // eslint-disable-next-line
+  }, [pairs]);
+
+  const handlePairChange = (idx, field, val) => {
+    setPairs(prev => prev.map((pair, i) => i === idx ? { ...pair, [field]: val } : pair));
+  };
+
+  const handleAdd = () => {
+    setPairs(prev => [...prev, { key: '', url: '' }]);
+  };
+
+  const handleRemove = (idx) => {
+    setPairs(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="space-y-2">
+      {pairs.map((pair, idx) => (
+        <div key={idx} className="flex gap-2 items-center">
+          <input
+            type="text"
+            className="border rounded px-2 py-1 flex-1"
+            placeholder="Key (e.g. ethnic)"
+            value={pair.key}
+            onChange={e => handlePairChange(idx, 'key', e.target.value)}
+            required
+          />
+          <input
+            type="url"
+            className="border rounded px-2 py-1 flex-1"
+            placeholder="URL for this key"
+            value={pair.url}
+            onChange={e => handlePairChange(idx, 'url', e.target.value)}
+            required
+          />
+          {pairs.length > 1 && (
+            <button
+              type="button"
+              className="text-red-500 hover:text-red-700 px-2"
+              onClick={() => handleRemove(idx)}
+              title="Remove"
+            >
+              &times;
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type="button"
+        className="mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+        onClick={handleAdd}
+      >
+        + Add Key/URL
+      </button>
+    </div>
   );
 };
