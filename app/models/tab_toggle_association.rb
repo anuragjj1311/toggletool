@@ -16,12 +16,25 @@ class TabToggleAssociation < ApplicationRecord
   # Store regions as JSON array
   serialize :regions, coder: JSON
 
-  scope :active, -> { where('start_date <= ? AND end_date >= ?', Date.current, Date.current) }
+  scope :active, -> { where(deleted_at: nil) }
+  scope :deleted, -> { where.not(deleted_at: nil) }
   scope :by_region, ->(region) { 
     where("json_extract(regions, '$') LIKE ?", "%#{region}%")
   }
   scope :shops, -> { where(toggle_type: 'SHOP') }
   scope :categories, -> { where(toggle_type: 'CATEGORY') }
+
+  def soft_delete!
+    update!(deleted_at: Time.current)
+  end
+
+  def restore!
+    update!(deleted_at: nil)
+  end
+
+  def deleted?
+    deleted_at.present?
+  end
 
   private
 

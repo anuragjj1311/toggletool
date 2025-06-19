@@ -5,7 +5,7 @@ class Api::V1::TogglesController < ApplicationController
   def tabs_for_toggle
     Rails.logger.info("Getting all tabs for toggle_id=#{@toggle.id}")
     
-    @associations = @toggle.tab_toggle_associations.includes(:tab)
+    @associations = @toggle.tab_toggle_associations.where(deleted_at: nil).includes(:tab)
     @associations = @associations.active if params[:current] == 'true'
     @associations = @associations.by_region(params[:region]) if params[:region].present?
     
@@ -208,7 +208,7 @@ class Api::V1::TogglesController < ApplicationController
     end
 
     # Get all associations for this toggle
-    @associations = @toggle.tab_toggle_associations.includes(:tab)
+    @associations = @toggle.tab_toggle_associations.where(deleted_at: nil).includes(:tab)
 
     if @associations.empty?
       render_success(

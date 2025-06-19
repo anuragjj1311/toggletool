@@ -58,17 +58,33 @@ export const ToggleForm = ({
     label: type
   }));
 
-  const regionOptions = config.regions.map(region => ({
-    value: region,
-    label: region
-  }));
+  const regionOptions = [
+    { value: '__all__', label: 'All' },
+    ...config.regions.map(region => ({ value: region, label: region }))
+  ];
 
   const tabTypeOptions = config.tab_types.map(type => ({
     value: type,
     label: type
   }));
 
-  // For createTab, only title is read-only, other fields are editable
+
+  const handleRegionChangeWithAll = (selectedValues) => {
+    if (selectedValues.includes('__all__')) {
+      if (formData.regions.length === config.regions.length) {
+        onRegionChange([]);
+      } else {
+        onRegionChange(config.regions);
+      }
+    } else {
+      if (selectedValues.length === config.regions.length) {
+        onRegionChange(selectedValues);
+      } else {
+        onRegionChange(selectedValues);
+      }
+    }
+  };
+
   if (modalType === 'createTab') {
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -90,7 +106,7 @@ export const ToggleForm = ({
           value={formData.toggle_type}
           onChange={(e) => onInputChange('toggle_type', e.target.value)}
           options={toggleTypeOptions}
-          required
+          required={false}
         />
         <Input
           label="Image URL"
@@ -136,8 +152,12 @@ export const ToggleForm = ({
         <CheckboxGroup
           label="Regions"
           options={regionOptions}
-          selectedValues={formData.regions}
-          onChange={onRegionChange}
+          selectedValues={
+            formData.regions.length === config.regions.length && config.regions.length > 0
+              ? ['__all__', ...formData.regions]
+              : formData.regions
+          }
+          onChange={handleRegionChangeWithAll}
         />
         <Select
           label="Link Type"
@@ -153,7 +173,7 @@ export const ToggleForm = ({
               <Input
                 type="url"
                 value={formData.route_info.url.default || ''}
-                onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
+                onChange={(e) => onInputChange('route_info.url', e.target.value )}
                 placeholder="https://example.com"
                 required
               />
@@ -168,13 +188,13 @@ export const ToggleForm = ({
                   type="url"
                   value={formData.route_info.url.web || ''}
                   onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, web: e.target.value })}
-                  placeholder="Web URL: https://example.com"
+                  placeholder=" URL: https://example.com"
                 />
                 <Input
                   type="text"
                   value={formData.route_info.url.mobile || ''}
                   onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, mobile: e.target.value })}
-                  placeholder="Mobile URL: app://example"
+                  placeholder=" URL: app://example"
                 />
               </div>
             )}
@@ -218,7 +238,7 @@ export const ToggleForm = ({
         onChange={(e) => onInputChange('toggle_type', e.target.value)}
         options={toggleTypeOptions}
         placeholder="Select toggle type"
-        required
+        required={modalType !== 'createTab' && modalType !== 'update'}
       />
       <Input
         label="Image URL"
@@ -264,8 +284,12 @@ export const ToggleForm = ({
       <CheckboxGroup
         label="Regions"
         options={regionOptions}
-        selectedValues={formData.regions}
-        onChange={onRegionChange}
+        selectedValues={
+          formData.regions.length === config.regions.length && config.regions.length > 0
+            ? ['__all__', ...formData.regions]
+            : formData.regions
+        }
+        onChange={handleRegionChangeWithAll}
       />
       <Select
         label="Link Type"

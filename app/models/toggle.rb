@@ -43,6 +43,10 @@ class Toggle < ApplicationRecord
     toggle_type == 'CATEGORY'
   end
 
+  def active?
+    deleted_at.nil? && start_date.present? && end_date.present? && start_date <= Date.current && end_date >= Date.current
+  end
+
   private
 
   def default_title

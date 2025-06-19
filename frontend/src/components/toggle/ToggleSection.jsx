@@ -49,9 +49,6 @@ export const ToggleSection = ({
                   {toggle.type}
                 </span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white`}>
-                  {toggle.link_type}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white`}>
                   {isDisabled ? 'Disabled' : 'Enabled'}
                 </span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white`}>

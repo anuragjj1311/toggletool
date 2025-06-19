@@ -9,7 +9,7 @@ class Api::V1::TabsController < ApplicationController
     result = {}
     
     @tabs.each do |tab|
-      toggles_data = tab.tab_toggle_associations.includes(linked_toggle: :link_generator).map do |association|
+      toggles_data = tab.tab_toggle_associations.where(deleted_at: nil).includes(linked_toggle: :link_generator).map do |association|
         links = generate_links_for_association(association)
         
         {
@@ -20,7 +20,8 @@ class Api::V1::TabsController < ApplicationController
           end_date: association.end_date,
           regions: association.regions,
           link_type: association.link_type,
-          links: links
+          links: links,
+          deleted_at: association.linked_toggle.deleted_at
         }
       end
       
@@ -31,7 +32,7 @@ class Api::V1::TabsController < ApplicationController
   end
 
   def show
-    toggles_data = @tab.tab_toggle_associations.includes(linked_toggle: :link_generator).map do |association|
+    toggles_data = @tab.tab_toggle_associations.where(deleted_at: nil).includes(linked_toggle: :link_generator).map do |association|
       links = generate_links_for_association(association)
       
       {
@@ -42,7 +43,8 @@ class Api::V1::TabsController < ApplicationController
         end_date: association.end_date,
         regions: association.regions,
         link_type: association.link_type,
-        links: links
+        links: links,
+        deleted_at: association.linked_toggle.deleted_at
       }
     end
 
