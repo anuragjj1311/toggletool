@@ -189,12 +189,13 @@ export const ToggleSection = ({
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="space-y-2">
                       {Object.entries(tabDetails.links || {}).map(([key, value]) => {
-                        if (typeof value === 'object') {
+                        if (typeof value === 'object' && value !== null) {
+                          // For ACTIVITY links
                           return Object.entries(value).map(([subKey, link]) => (
                             <div key={`${key}-${subKey}`} className="flex items-center gap-2">
                               <Link size={16} className="text-blue-600 flex-shrink-0" />
                               <span className="text-sm">
-                                <span className="font-medium">{key} - {subKey}:</span>{' '}
+                                <span className="font-medium">{key === 'default' ? subKey : `${key} - ${subKey}`}:</span>{' '}
                                 <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
                                   {link}
                                 </a>

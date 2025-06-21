@@ -157,7 +157,7 @@ export const ToggleForm = ({
               <Input
                 type="url"
                 value={formData.route_info.url.default || ''}
-                onChange={(e) => onInputChange('route_info.url', e.target.value )}
+                onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
                 placeholder="https://example.com"
                 required
               />

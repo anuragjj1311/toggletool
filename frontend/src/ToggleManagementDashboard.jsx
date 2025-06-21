@@ -34,8 +34,8 @@ const ToggleManagementDashboard = () => {
     handleRegionChange 
   } = useToggleForm();
 
-  const [showEditAllModal, setShowEditAllModal] = React.useState(false);
-  const [editAllToggle, setEditAllToggle] = React.useState(null);
+  // const [showEditAllModal, setShowEditAllModal] = React.useState(false);
+  // const [editAllToggle, setEditAllToggle] = React.useState(null);
 
   useEffect(() => {
     console.log('Dashboard mounted');
@@ -60,27 +60,30 @@ const ToggleManagementDashboard = () => {
       return;
     }
     try {
-      console.log('FormData before submission:', formData); 
+      const cleanRegions = formData.regions.filter(r => r !== '__all__');
+      const cleanFormData = { ...formData, regions: cleanRegions };
+
+      console.log('FormData before submission:', cleanFormData); 
       if (modalType === 'create') {
         const tabIndex = config.tab_types.findIndex(
-          t => t === formData.tab_type
+          t => t === cleanFormData.tab_type
         );
         const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
-        await toggleService.createToggle(tabId, {toggle: formData});
+        await toggleService.createToggle(tabId, {toggle: cleanFormData});
       } else if (modalType === 'createTab') {
         const tabIndex = config.tab_types.findIndex(
-          t => t === formData.tab_type
+          t => t === cleanFormData.tab_type
         );
         const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
         const submitData = {
           toggle: {
-            title: formData.title,
-            toggle_type: formData.toggle_type,
-            image_url: formData.image_url,
-            start_date: formData.start_date,
-            end_date: formData.end_date,
-            regions: formData.regions,
-            route_info: formData.route_info
+            title: cleanFormData.title,
+            toggle_type: cleanFormData.toggle_type,
+            image_url: cleanFormData.image_url,
+            start_date: cleanFormData.start_date,
+            end_date: cleanFormData.end_date,
+            regions: cleanFormData.regions,
+            route_info: cleanFormData.route_info
           },
           tab_type_id: tabId
         };
@@ -88,18 +91,18 @@ const ToggleManagementDashboard = () => {
         await toggleService.createToggle(tabId, submitData);
       } else if (modalType === 'update' && selectedToggle) {
         const tabIndex = config.tab_types.findIndex(
-          t => t === formData.tab_type
+          t => t === cleanFormData.tab_type
         );
         const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
         const submitData = {
           toggle: {
-            title: formData.title,
-            toggle_type: formData.toggle_type,
-            image_url: formData.image_url,
-            start_date: formData.start_date,
-            end_date: formData.end_date,
-            regions: formData.regions,
-            route_info: formData.route_info
+            title: cleanFormData.title,
+            toggle_type: cleanFormData.toggle_type,
+            image_url: cleanFormData.image_url,
+            start_date: cleanFormData.start_date,
+            end_date: cleanFormData.end_date,
+            regions: cleanFormData.regions,
+            route_info: cleanFormData.route_info
           }
         };
         console.log('Updating toggle with data:', submitData);
