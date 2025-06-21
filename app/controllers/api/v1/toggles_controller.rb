@@ -131,40 +131,46 @@ class Api::V1::TogglesController < ApplicationController
   end
 
   def update
-    @association = @tab.tab_toggle_associations.find_by!(linked_toggle: @toggle)
-    
-    ActiveRecord::Base.transaction do
-      # Update toggle with all attributes including toggle_type
-      toggle_attributes = toggle_params.except(:route_info, :regions, :start_date, :end_date)
-      if @toggle.update(toggle_attributes)
-        # Handle route_info - FIXED
-        if toggle_params[:route_info].present?
-          if @toggle.link_generator.present?
-            @toggle.link_generator.update!(url: toggle_params[:route_info][:url])
-          else
-            link_type_class = toggle_params[:route_info][:link_type] == 'ACTIVITY' ? 'ActivityLink' : 'DirectLink'
-            @toggle.build_link_generator(
-              type: link_type_class,
-              url: toggle_params[:route_info][:url]
-            )
-            @toggle.link_generator.save!
+    if @tab
+      @association = @tab.tab_toggle_associations.find_by!(linked_toggle: @toggle)
+      ActiveRecord::Base.transaction do
+        # Update toggle with all attributes including toggle_type
+        toggle_attributes = toggle_params.except(:route_info, :regions, :start_date, :end_date)
+        if @toggle.update(toggle_attributes)
+          # Handle route_info - FIXED
+          if toggle_params[:route_info].present?
+            if @toggle.link_generator.present?
+              @toggle.link_generator.update!(url: toggle_params[:route_info][:url])
+            else
+              link_type_class = toggle_params[:route_info][:link_type] == 'ACTIVITY' ? 'ActivityLink' : 'DirectLink'
+              @toggle.build_link_generator(
+                type: link_type_class,
+                url: toggle_params[:route_info][:url]
+              )
+              @toggle.link_generator.save!
+            end
           end
-        end
-        
-        # Update association
-        association_params = {
-          toggle_type: toggle_params[:toggle_type].to_s.upcase,
-          link_type: toggle_params.dig(:route_info, :link_type) || @association.link_type,
-          start_date: toggle_params[:start_date],
-          end_date: toggle_params[:end_date],
-          regions: toggle_params[:regions]
-        }.compact
-        
-        if @association.update(association_params)
-          render json: format_association_response(@association)
+          # Update association
+          association_params = {
+            toggle_type: toggle_params[:toggle_type].to_s.upcase,
+            link_type: toggle_params.dig(:route_info, :link_type) || @association.link_type,
+            start_date: toggle_params[:start_date],
+            end_date: toggle_params[:end_date],
+            regions: toggle_params[:regions]
+          }.compact
+          if @association.update(association_params)
+            render json: format_association_response(@association)
+          else
+            render_error(@association.errors.full_messages.join(', '))
+          end
         else
-          render_error(@association.errors.full_messages.join(', '))
+          render_error(@toggle.errors.full_messages.join(', '))
         end
+      end
+    else
+      toggle_attributes = toggle_params.slice(:title, :toggle_type, :image_url)
+      if @toggle.update(toggle_attributes)
+        render json: @toggle
       else
         render_error(@toggle.errors.full_messages.join(', '))
       end

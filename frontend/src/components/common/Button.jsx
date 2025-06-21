@@ -13,7 +13,7 @@ export const Button = ({
   const baseClasses = 'font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2';
   
   const variants = {
-    primary: 'bg-gradient-to-r from-green-600 to-lime-600 text-white hover:shadow-lg transform hover:scale-105',
+    primary: 'bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:shadow-lg transform hover:scale-105',
     secondary: 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30',
     danger: 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:shadow-md',
     warning: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-md',

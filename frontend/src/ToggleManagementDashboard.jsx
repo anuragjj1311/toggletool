@@ -34,6 +34,9 @@ const ToggleManagementDashboard = () => {
     handleRegionChange 
   } = useToggleForm();
 
+  const [showEditAllModal, setShowEditAllModal] = React.useState(false);
+  const [editAllToggle, setEditAllToggle] = React.useState(null);
+
   useEffect(() => {
     console.log('Dashboard mounted');
     console.log('Initial config:', config);
@@ -131,6 +134,32 @@ const ToggleManagementDashboard = () => {
     }
   };
 
+  const handleEditToggleAll = (toggle, closeModal) => {
+    // Render the ToggleForm for editing all tabs
+    return (
+      <ToggleForm
+        formData={formData}
+        config={config}
+        modalType="editAll"
+        onInputChange={handleInputChange}
+        onRegionChange={handleRegionChange}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+            await toggleService.updateToggleForAllTabs(toggle.id, formData);
+            showNotification('Toggle updated for all tabs!');
+            closeModal();
+            fetchInitialData();
+          } catch (error) {
+            showNotification('Error updating toggle for all tabs.', error);
+          }
+        }}
+        onCancel={closeModal}
+        selectedToggle={toggle}
+      />
+    );
+  };
+
   if (loading) {
     return <LoadingSpinner message="Loading toggles..." />;
   }
@@ -172,7 +201,7 @@ const ToggleManagementDashboard = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-lime-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                 Toggle Management
               </h1>
               <p className="text-gray-600 mt-1">Manage your app toggles and Tabs</p>
@@ -199,6 +228,7 @@ const ToggleManagementDashboard = () => {
                 onEditToggle={(toggle) => openModal('update', toggle)}
                 onDeleteToggle={handleDelete}
                 onRestoreToggle={handleRestore}
+                onEditToggleAll={(toggle, closeModal) => handleEditToggleAll(toggle, closeModal)}
               />
             ))}
           </div>

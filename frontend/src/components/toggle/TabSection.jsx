@@ -25,7 +25,7 @@ export const TabSection = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-green-100">
-      <div className="bg-gradient-to-r from-green-600 to-lime-600 p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold text-white">{tabName}</h2>

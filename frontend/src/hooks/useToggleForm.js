@@ -41,19 +41,15 @@ export const useToggleForm = () => {
     setModalType(type);
     setSelectedToggle(toggle);
     console.log('toggle passed to openModal:', toggle);
-    if (type === 'update' && toggle) {
+    if ((type === 'update' || type === 'editAll') && toggle) {
       setFormData({
         title: toggle.title,
         toggle_type: toggle.type,
         image_url: toggle.image_url || '',
         start_date: toggle.start_date || '',
         end_date: toggle.end_date || '',
-        regions: toggle.regions || [],
-        route_info: {
-          link_type: toggle.link_type,
-          url: toggle.links || {}
-        },
-        initial_tab: toggle.tabs[0] || '',
+        regions: [],
+        route_info: { link_type: 'DIRECT', url: {} },
         tab_type: ''
       });
     } else if (type === 'createTab' && toggle) {

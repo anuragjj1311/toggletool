@@ -26,6 +26,12 @@ export const toggleService = {
     return response.data;
   },
 
+  // Update a toggle for all tabs
+  updateToggleForAllTabs: async (toggleId, data) => {
+    const response = await api.patch(`/toggles/${toggleId}`, { toggle: data });
+    return response.data;
+  },
+
   // Delete a toggle
   deleteToggle: async (toggleId) => {
     const response = await api.delete(`/toggles/${toggleId}`);

@@ -9,12 +9,14 @@ export const ToggleSection = ({
   onCreateTab, 
   onEditToggle, 
   onDeleteToggle,
-  onRestoreToggle
+  onRestoreToggle,
+  onEditToggleAll
 }) => {
   // If deleted_at is not present or is null, the toggle is enabled
   const isDisabled = toggle.deleted_at !== null && toggle.deleted_at !== undefined;
 
   const [selectedTab, setSelectedTab] = useState(null);
+  const [showEditAllModal, setShowEditAllModal] = useState(false);
 
   const handleToggleStatus = (toggleId) => {
     if (isDisabled) {
@@ -39,7 +41,7 @@ export const ToggleSection = ({
         <div className={`bg-gradient-to-r p-6 ${
           isDisabled 
             ? 'from-gray-500 to-gray-400'
-            : 'from-green-600 to-lime-600'
+            : 'from-blue-600 to-blue-800'
         }`}>
           <div className="flex justify-between items-center">
             <div>
@@ -73,6 +75,14 @@ export const ToggleSection = ({
               >
                 Edit Tab
               </Button>
+              <Button
+                variant="info"
+                onClick={() => setShowEditAllModal(true)}
+                icon={Edit3}
+                disabled={isDisabled}
+              >
+                Edit Toggle
+              </Button>
             </div>
           </div>
         </div>
@@ -85,16 +95,6 @@ export const ToggleSection = ({
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar size={16} />      
                 <span>{toggle.start_date} - {toggle.end_date}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <MapPin size={16} />
-                <div className="flex flex-wrap gap-1">
-                  {toggle.regions?.map(region => (
-                    <span key={region} className="bg-gray-100 px-2 py-1 rounded text-xs">
-                      {region}
-                    </span>
-                  )) || <span className="text-gray-500">No regions</span>}
-                </div>
               </div>
             </div>
 
@@ -221,6 +221,17 @@ export const ToggleSection = ({
               </div>
             );
           })()}
+        </Modal>
+      )}
+
+      {showEditAllModal && (
+        <Modal
+          isOpen={showEditAllModal}
+          onClose={() => setShowEditAllModal(false)}
+          title={`Edit Toggle (All Tabs)`}
+          maxWidth="max-w-2xl"
+        >
+          {onEditToggleAll && onEditToggleAll(toggle, () => setShowEditAllModal(false))}
         </Modal>
       )}
     </>

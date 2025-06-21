@@ -8,11 +8,29 @@ export const CheckboxGroup = ({
   className = '' 
 }) => {
   const handleChange = (value) => {
-    const newValues = selectedValues.includes(value)
-      ? selectedValues.filter(v => v !== value)
-      : [...selectedValues, value];
-    onChange(newValues);
+    if (value === '__all__') {
+      // If "All" is clicked
+      if (selectedValues.length === options.length - 1) { 
+        onChange([]);
+      } else {
+        const allRegionValues = options
+          .filter(option => option.value !== '__all__')
+          .map(option => option.value);
+        onChange(allRegionValues);
+      }
+    } else {
+      const newValues = selectedValues.includes(value)
+        ? selectedValues.filter(v => v !== value)
+        : [...selectedValues, value];
+      onChange(newValues);
+    }
+    
   };
+
+  // Check if all regions (excluding "All") are selected
+  const allRegionsSelected = options
+    .filter(option => option.value !== '__all__')
+    .every(option => selectedValues.includes(option.value));
 
   return (
     <div className={className}>
@@ -27,7 +45,11 @@ export const CheckboxGroup = ({
           >
             <input
               type="checkbox"
-              checked={selectedValues.includes(option.value)}
+              checked={
+                option.value === '__all__' 
+                  ? allRegionsSelected 
+                  : selectedValues.includes(option.value)
+              }
               onChange={() => handleChange(option.value)}
               className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
             />
