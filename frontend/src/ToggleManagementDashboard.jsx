@@ -34,9 +34,6 @@ const ToggleManagementDashboard = () => {
     handleRegionChange 
   } = useToggleForm();
 
-  // const [showEditAllModal, setShowEditAllModal] = React.useState(false);
-  // const [editAllToggle, setEditAllToggle] = React.useState(null);
-
   useEffect(() => {
     console.log('Dashboard mounted');
     console.log('Initial config:', config);

@@ -1,6 +1,5 @@
 class SeedPredefinedTabs < ActiveRecord::Migration[7.0]
   def up
-    # Create predefined tabs that developers manage
     predefined_tabs = [
       {
         title: 'Men',

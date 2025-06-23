@@ -3,7 +3,6 @@ class Api::V1::TogglesController < ApplicationController
   before_action :set_tab, except: [:tabs_for_toggle, :available_options]
 
   def tabs_for_toggle
-    Rails.logger.info("Getting all tabs for toggle_id=#{@toggle.id}")
     
     @associations = @toggle.tab_toggle_associations.where(deleted_at: nil).includes(:tab)
     @associations = @associations.active if params[:current] == 'true'
