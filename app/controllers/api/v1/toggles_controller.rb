@@ -61,14 +61,11 @@ class Api::V1::TogglesController < ApplicationController
   end
 
   def show
-    Rails.logger.info("Showing toggle for tab_id=#{@tab.id}, toggle_id=#{@toggle.id}")
-
     @association = @tab.tab_toggle_associations.find_by!(linked_toggle: @toggle)
     render json: format_association_response(@association)
   end
 
   def create
-    Rails.logger.info("Toggle params: #{toggle_params.inspect}")
     ActiveRecord::Base.transaction do
       # Create or find toggle - only with toggle-specific attributes
       @toggle = Toggle.find_or_initialize_by(title: toggle_params[:title])
@@ -277,7 +274,6 @@ class Api::V1::TogglesController < ApplicationController
     end
   end
 
-  # FIXED: Clean response formatting
   def format_association_response(association)
     {
       id: association.id,

@@ -90,7 +90,6 @@ class Api::V1::TabsController < ApplicationController
   end
 
   def tab_params
-    # Only allow updating dates and regions, not title
     params.require(:tab).permit(:start_date, :end_date, regions: [])
   end
 end

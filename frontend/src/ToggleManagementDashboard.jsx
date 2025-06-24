@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from './components/common/Button';
 import { Modal } from './components/common/Modal';
@@ -135,7 +135,6 @@ const ToggleManagementDashboard = () => {
   };
 
   const handleEditToggleAll = (toggle, closeModal) => {
-    // Render the ToggleForm for editing all tabs
     return (
       <ToggleForm
         formData={formData}

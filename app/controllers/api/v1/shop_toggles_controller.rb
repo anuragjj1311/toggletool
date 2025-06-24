@@ -26,7 +26,7 @@ class Api::V1::ShopTogglesController < ApplicationController
       end
 
       @association = @tab.tab_toggle_associations.build(
-        toggle_id: @toggle.id,  # Fixed: using toggle_id instead of toggle
+        toggle_id: @toggle.id, 
         toggle_type: 'Shop',
         link_type: toggle_params.dig(:route_info, :link_type) || 'DirectLink',
         start_date: toggle_params[:start_date],

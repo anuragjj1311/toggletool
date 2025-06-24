@@ -18,7 +18,6 @@ export const useToggleData = () => {
   const fetchConfig = async () => {
     try {
       const data = await toggleService.getAvailableOptions();
-      console.log('Fetched config:', data);
       setConfig({
         tab_types: data.tab_types || [],
         toggle_types: data.toggle_types || [],

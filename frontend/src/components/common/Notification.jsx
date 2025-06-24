@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const Notification = ({ message, type = 'success' }) => {
   const bgColor = type === 'success' ? 'bg-blue-600' : 'bg-blue-500';

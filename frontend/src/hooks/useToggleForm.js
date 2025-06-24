@@ -40,7 +40,6 @@ export const useToggleForm = () => {
   const openModal = (type, toggle = null) => {
     setModalType(type);
     setSelectedToggle(toggle);
-    console.log('toggle passed to openModal:', toggle);
     if ((type === 'update' || type === 'editAll') && toggle) {
       setFormData({
         title: toggle.title,
@@ -82,7 +81,8 @@ export const useToggleForm = () => {
   };
 
   const handleInputChange = (field, value) => {
-      console.log('Updating field:', field, 'with value:', value);    if (field.includes('.')) {
+      console.log('Updating field:', field, 'with value:', value);    
+      if (field.includes('.')) {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
         ...prev,

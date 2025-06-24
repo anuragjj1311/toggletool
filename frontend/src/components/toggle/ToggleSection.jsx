@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Link, Plus, Edit3, Power } from 'lucide-react';
+import { Calendar, Link, Plus, Edit3, Power } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 
@@ -12,7 +12,6 @@ export const ToggleSection = ({
   onRestoreToggle,
   onEditToggleAll
 }) => {
-  // If deleted_at is not present or is null, the toggle is enabled
   const isDisabled = toggle.deleted_at !== null && toggle.deleted_at !== undefined;
 
   const [selectedTab, setSelectedTab] = useState(null);
@@ -20,14 +19,12 @@ export const ToggleSection = ({
 
   const handleToggleStatus = (toggleId) => {
     if (isDisabled) {
-      // When restoring, restore for all tabs since this is the toggle management view
       onRestoreToggle(toggleId, { restoreAll: true });
     } else {
       onDeleteToggle(toggleId);
     }
   };
 
-  // Helper to get full tab-toggle details
   const getTabToggleDetails = (tabName) => {
     const tabToggles = allTabs[tabName] || [];
     return tabToggles.find(t => t.id === toggle.id);

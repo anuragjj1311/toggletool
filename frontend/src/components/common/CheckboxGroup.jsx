@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const CheckboxGroup = ({ 
   label, 
@@ -9,7 +8,6 @@ export const CheckboxGroup = ({
 }) => {
   const handleChange = (value) => {
     if (value === '__all__') {
-      // If "All" is clicked
       if (selectedValues.length === options.length - 1) { 
         onChange([]);
       } else {
@@ -27,7 +25,6 @@ export const CheckboxGroup = ({
     
   };
 
-  // Check if all regions (excluding "All") are selected
   const allRegionsSelected = options
     .filter(option => option.value !== '__all__')
     .every(option => selectedValues.includes(option.value));

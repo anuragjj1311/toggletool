@@ -2,14 +2,12 @@ class Tab < ApplicationRecord
   has_many :tab_toggle_associations, dependent: :destroy
   has_many :toggles, through: :tab_toggle_associations
 
-  # Define tab types from configuration
   VALID_TAB_TYPES = Rails.application.config.tab_types
   
   validates :title, presence: true, inclusion: { in: VALID_TAB_TYPES }
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
 
-  # Store regions as JSON array - predefined regions
   VALID_REGIONS = Rails.application.config.regions
   serialize :regions, coder: JSON
   validate :regions_must_be_valid
@@ -19,7 +17,6 @@ class Tab < ApplicationRecord
     where("json_extract(regions, '$') LIKE ?", "%#{region}%")
   }
 
-  # Prevent deletion of predefined tabs
   before_destroy :prevent_predefined_tab_deletion
 
   private

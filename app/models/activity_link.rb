@@ -19,8 +19,6 @@ class ActivityLink < LinkGenerator
   end
 
   def build_activity_url
-    # Return the entire hash of URLs for ACTIVITY links
-    # This allows the frontend to choose the appropriate URL based on context
     url
   rescue => e
     Rails.logger.error "Failed to build activity URL: #{e.message}"
