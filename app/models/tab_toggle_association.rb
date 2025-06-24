@@ -1,6 +1,8 @@
 class TabToggleAssociation < ApplicationRecord
   belongs_to :tab
   belongs_to :linked_toggle, class_name: 'Toggle', foreign_key: 'toggle_id'
+  has_one :link_generator, as: :linkable, dependent: :destroy
+  accepts_nested_attributes_for :link_generator, allow_destroy: true
   
   alias_method :toggle, :linked_toggle
 

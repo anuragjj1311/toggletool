@@ -42,7 +42,7 @@ export const ToggleForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validateDates()) {
+    if (modalType === 'editAll' || validateDates()) {
       console.log('Submitting form data:', formData);
       onSubmit(e);
     }
@@ -231,40 +231,6 @@ export const ToggleForm = ({
           onChange={(e) => onInputChange('image_url', e.target.value)}
           placeholder="https://example.com/image.jpg"
         />
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Input
-              label="Start Date"
-              type="date"
-              value={formData.start_date}
-              onChange={(e) => {
-                onInputChange('start_date', e.target.value);
-                setErrors(prev => ({ ...prev, start_date: '' }));
-              }}
-              required
-              error={errors.start_date}
-            />
-            {errors.start_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
-            )}
-          </div>
-          <div>
-            <Input
-              label="End Date"
-              type="date"
-              value={formData.end_date}
-              onChange={(e) => {
-                onInputChange('end_date', e.target.value);
-                setErrors(prev => ({ ...prev, end_date: '' }));
-              }}
-              required
-              error={errors.end_date}
-            />
-            {errors.end_date && (
-              <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
-            )}
-          </div>
-        </div>
         <div className="flex gap-4 pt-4 border-t">
           <Button 
             type="button" 

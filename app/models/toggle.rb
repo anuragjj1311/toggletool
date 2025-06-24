@@ -2,9 +2,6 @@ class Toggle < ApplicationRecord
   has_many :tab_toggle_associations, dependent: :destroy
   has_many :tabs, through: :tab_toggle_associations
   
-  has_one :link_generator, as: :linkable, dependent: :destroy
-  accepts_nested_attributes_for :link_generator, allow_destroy: true
-  
   # Define toggle types as enum - only developers can modify this
   VALID_TOGGLE_TYPES = %w[SHOP CATEGORY].freeze
   

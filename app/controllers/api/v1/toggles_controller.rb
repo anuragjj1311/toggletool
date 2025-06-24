@@ -4,7 +4,7 @@ class Api::V1::TogglesController < ApplicationController
 
   def tabs_for_toggle
     
-    @associations = @toggle.tab_toggle_associations.where(deleted_at: nil).includes(:tab)
+    @associations = @toggle.tab_toggle_associations.where(deleted_at: nil).includes(:tab, :link_generator)
     @associations = @associations.active if params[:current] == 'true'
     @associations = @associations.by_region(params[:region]) if params[:region].present?
     
@@ -54,7 +54,7 @@ class Api::V1::TogglesController < ApplicationController
   end
 
   def index
-    @associations = @tab.tab_toggle_associations.includes(linked_toggle: :link_generator)
+    @associations = @tab.tab_toggle_associations.includes(:linked_toggle, :link_generator)
     @associations = @associations.active if params[:current] == 'true'
     
     render json: format_associations_response(@associations)
@@ -79,43 +79,36 @@ class Api::V1::TogglesController < ApplicationController
         return
       end
 
-      # Handle route_info (link_generator) - FIXED
-      if toggle_params[:route_info].present?
-        link_type_class = toggle_params[:route_info][:link_type] == 'ACTIVITY' ? 'ActivityLink' : 'DirectLink'
-        
-        if @toggle.link_generator.present?
-          # Update existing link generator
-          @toggle.link_generator.update!(
-            type: link_type_class,
-            url: toggle_params[:route_info][:url]
-          )
-        else
-          # Create new link generator
-          @toggle.build_link_generator(
-            type: link_type_class,
-            url: toggle_params[:route_info][:url]
-          )
-          
-          unless @toggle.link_generator.save
-            render_error(@toggle.link_generator.errors.full_messages.join(', '))
-            return
-          end
-        end
-      end
-
       # Find or create association to handle duplicates
       @association = @tab.tab_toggle_associations.find_or_initialize_by(
         toggle_id: @toggle.id
       )
       
-      # Update association attributes (dates and regions belong here)
-      @association.assign_attributes(
+      # Update association attributes
+      association_attributes = {
         toggle_type: toggle_params[:toggle_type].to_s.upcase,
         link_type: toggle_params.dig(:route_info, :link_type) || 'DIRECT',
         start_date: toggle_params[:start_date],
         end_date: toggle_params[:end_date],
         regions: toggle_params[:regions]
-      )
+      }
+      
+      # Handle link_generator for the association
+      if toggle_params[:route_info].present?
+        link_type_class = toggle_params[:route_info][:link_type] == 'ACTIVITY' ? 'ActivityLink' : 'DirectLink'
+        link_generator_attributes = {
+          type: link_type_class,
+          url: toggle_params[:route_info][:url]
+        }
+        
+        if @association.link_generator.present?
+          @association.link_generator.update!(link_generator_attributes)
+        else
+          @association.build_link_generator(link_generator_attributes)
+        end
+      end
+
+      @association.assign_attributes(association_attributes)
 
       if @association.save
         status = @association.previously_new_record? ? :created : :ok
@@ -133,19 +126,21 @@ class Api::V1::TogglesController < ApplicationController
         # Update toggle with all attributes including toggle_type
         toggle_attributes = toggle_params.except(:route_info, :regions, :start_date, :end_date)
         if @toggle.update(toggle_attributes)
-          # Handle route_info - FIXED
+          # Handle route_info for the association - FIXED
           if toggle_params[:route_info].present?
-            if @toggle.link_generator.present?
-              @toggle.link_generator.update!(url: toggle_params[:route_info][:url])
+            link_generator_attributes = { url: toggle_params[:route_info][:url] }
+            if @association.link_generator.present?
+              @association.link_generator.update!(link_generator_attributes)
             else
               link_type_class = toggle_params[:route_info][:link_type] == 'ACTIVITY' ? 'ActivityLink' : 'DirectLink'
-              @toggle.build_link_generator(
+              @association.build_link_generator(
                 type: link_type_class,
                 url: toggle_params[:route_info][:url]
               )
-              @toggle.link_generator.save!
+              @association.link_generator.save!
             end
           end
+
           # Update association
           association_params = {
             toggle_type: toggle_params[:toggle_type].to_s.upcase,
@@ -154,6 +149,7 @@ class Api::V1::TogglesController < ApplicationController
             end_date: toggle_params[:end_date],
             regions: toggle_params[:regions]
           }.compact
+
           if @association.update(association_params)
             render json: format_association_response(@association)
           else
@@ -164,12 +160,8 @@ class Api::V1::TogglesController < ApplicationController
         end
       end
     else
-      toggle_attributes = toggle_params.slice(:title, :toggle_type, :image_url)
-      if @toggle.update(toggle_attributes)
-        render json: @toggle
-      else
-        render_error(@toggle.errors.full_messages.join(', '))
-      end
+      # Update toggle and all its associations
+      update_all_associations
     end
   end
 
@@ -193,19 +185,25 @@ class Api::V1::TogglesController < ApplicationController
   def restore_all_associations
     @toggle.restore!
 
-    # Ensure all tab associations exist for this toggle
+    # This logic might need adjustment. When restoring a toggle, we need to decide
+    # what URL to give to the newly created/restored associations.
+    # For now, we create associations without a link_generator.
     Tab.find_each do |tab|
-      association = tab.tab_toggle_associations.find_by(toggle_id: @toggle.id)
-      unless association
-        # Create association with default values
-        tab.tab_toggle_associations.create!(
-          toggle_id: @toggle.id,
+      association = tab.tab_toggle_associations.with_deleted.find_or_initialize_by(toggle_id: @toggle.id)
+      
+      if association.new_record?
+        # Create association with default values if it doesn't exist
+        association.assign_attributes(
           toggle_type: @toggle.toggle_type,
-          link_type: @toggle.link_generator&.type == 'ActivityLink' ? 'ACTIVITY' : 'DIRECT',
+          link_type: 'DIRECT', # Default link_type
           start_date: tab.start_date,
           end_date: tab.end_date,
           regions: tab.regions || []
         )
+        association.save!
+      else
+        # Restore if it was soft-deleted
+        association.restore!
       end
     end
 
@@ -243,27 +241,59 @@ class Api::V1::TogglesController < ApplicationController
 
   def reset
     @toggle.reset_to_default!
+    # Resetting a toggle might now imply changes to associations.
+    # The current implementation just resets toggle's own fields.
+    # What should happen to link_generators on associations is undefined.
+    # We will leave this as is for now, only resetting title/image_url.
     @association = @tab.tab_toggle_associations.find_by!(linked_toggle: @toggle)
     render_success(format_association_response(@association), 'Toggle reset to default successfully')
   end
 
   private
 
+  def update_all_associations
+    ActiveRecord::Base.transaction do
+      toggle_attributes = toggle_params.slice(:title, :toggle_type, :image_url)
+      
+      unless @toggle.update(toggle_attributes)
+        render_error(@toggle.errors.full_messages.join(', '))
+        raise ActiveRecord::Rollback
+      end
+
+      # Update all existing associations for this toggle
+      @toggle.tab_toggle_associations.find_each do |association|
+        association_params = {
+          toggle_type: @toggle.toggle_type # Keep association's type consistent with toggle's type
+        }.compact
+        
+        unless association.update(association_params)
+          render_error(association.errors.full_messages.join(', '))
+          raise ActiveRecord::Rollback
+        end
+      end
+      
+      render json: @toggle.as_json(include: :tab_toggle_associations)
+    end
+  end
+
   def set_tab
     @tab = Tab.find(params[:tab_id]) if params[:tab_id]
   end
 
   def set_toggle
-    @toggle = Toggle.find(params[:id])
+    @toggle = Toggle.with_deleted.find(params[:id]) if params[:action] == 'restore'
+    @toggle ||= Toggle.find(params[:id])
   end
 
   def generate_links_for_association(association)
+    return { 'default' => '#' } unless association.link_generator
+
     case association.link_type
     when 'DIRECT'
-      { 'default' => association.linked_toggle.link_generator&.url }
+      { 'default' => association.link_generator&.url }
     when 'ACTIVITY'
       # For activity links, the URL is stored as JSON hash
-      url_data = association.linked_toggle.link_generator&.url
+      url_data = association.link_generator&.url
       if url_data.is_a?(Hash)
         url_data
       else
@@ -286,12 +316,12 @@ class Api::V1::TogglesController < ApplicationController
       end_date: association.end_date,
       regions: association.regions,
       linked_toggle: {
-        image_url: association.linked_toggle.image_url,
-        link_generator: association.linked_toggle.link_generator ? {
-          type: association.linked_toggle.link_generator.type,
-          url: association.linked_toggle.link_generator.url
-        } : nil
-      }
+        image_url: association.linked_toggle.image_url
+      },
+      link_generator: association.link_generator ? {
+        type: association.link_generator.type,
+        url: association.link_generator.url
+      } : nil
     }
   end
 

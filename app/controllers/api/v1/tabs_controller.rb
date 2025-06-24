@@ -2,14 +2,14 @@ class Api::V1::TabsController < ApplicationController
   before_action :set_tab, only: [:show, :update]
 
   def index
-    @tabs = Tab.includes(tab_toggle_associations: { linked_toggle: :link_generator }).all
+    @tabs = Tab.includes(tab_toggle_associations: [:linked_toggle, :link_generator]).all
     @tabs = @tabs.by_region(params[:region]) if params[:region].present?
     @tabs = @tabs.active if params[:active] == 'true'
 
     result = {}
     
     @tabs.each do |tab|
-      toggles_data = tab.tab_toggle_associations.where(deleted_at: nil).includes(linked_toggle: :link_generator).map do |association|
+      toggles_data = tab.tab_toggle_associations.where(deleted_at: nil).map do |association|
         links = generate_links_for_association(association)
         
         {
@@ -32,7 +32,7 @@ class Api::V1::TabsController < ApplicationController
   end
 
   def show
-    toggles_data = @tab.tab_toggle_associations.where(deleted_at: nil).includes(linked_toggle: :link_generator).map do |association|
+    toggles_data = @tab.tab_toggle_associations.where(deleted_at: nil).includes(:linked_toggle, :link_generator).map do |association|
       links = generate_links_for_association(association)
       
       {
@@ -75,7 +75,7 @@ class Api::V1::TabsController < ApplicationController
   end
 
   def generate_links_for_association(association)
-        link_generator = association.linked_toggle&.link_generator
+    link_generator = association.link_generator
     return { 'default' => '#' } if link_generator.nil?
 
     case association.link_type
