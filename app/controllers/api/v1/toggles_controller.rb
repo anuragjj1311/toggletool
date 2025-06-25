@@ -189,7 +189,7 @@ class Api::V1::TogglesController < ApplicationController
     # what URL to give to the newly created/restored associations.
     # For now, we create associations without a link_generator.
     Tab.find_each do |tab|
-      association = tab.tab_toggle_associations.with_deleted.find_or_initialize_by(toggle_id: @toggle.id)
+      association = tab.tab_toggle_associations.unscoped.find_or_initialize_by(toggle_id: @toggle.id)
       
       if association.new_record?
         # Create association with default values if it doesn't exist
@@ -281,8 +281,12 @@ class Api::V1::TogglesController < ApplicationController
   end
 
   def set_toggle
-    @toggle = Toggle.with_deleted.find(params[:id]) if params[:action] == 'restore'
-    @toggle ||= Toggle.find(params[:id])
+    if params[:action] == 'restore'
+      # For restore action, find toggle including soft-deleted ones
+      @toggle = Toggle.unscoped.find(params[:id])
+    else
+      @toggle = Toggle.find(params[:id])
+    end
   end
 
   def generate_links_for_association(association)

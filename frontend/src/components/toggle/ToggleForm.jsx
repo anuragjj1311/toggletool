@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
@@ -19,6 +19,12 @@ export const ToggleForm = ({
     start_date: '',
     end_date: ''
   });
+
+  useEffect(() => {
+    if (formData.toggle_type === 'CATEGORY' && formData.route_info.link_type !== 'DIRECT') {
+      onInputChange('route_info.link_type', 'DIRECT');
+    }
+  }, [formData.toggle_type]);
 
   const validateDates = () => {
     const newErrors = {
@@ -68,6 +74,7 @@ export const ToggleForm = ({
     label: type
   }));
 
+  const showLinkTypeSelect = formData.toggle_type !== 'CATEGORY';
 
   if (modalType === 'createTab') {
     return (
@@ -143,13 +150,22 @@ export const ToggleForm = ({
           }
           onChange={onRegionChange}
         />
-        <Select
-          label="Link Type"
-          value={formData.route_info.link_type}
-          onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
-          options={linkTypeOptions}
-          required
-        />
+        {showLinkTypeSelect ? (
+          <Select
+            label="Link Type"
+            value={formData.route_info.link_type}
+            onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
+            options={linkTypeOptions}
+            required
+          />
+        ) : (
+          <Input
+            label="Link Type"
+            value="DIRECT"
+            readOnly
+            disabled
+          />
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">URL Configuration</label>
           <div className="space-y-3">
@@ -172,13 +188,13 @@ export const ToggleForm = ({
                   type="url"
                   value={formData.route_info.url.web || ''}
                   onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, web: e.target.value })}
-                  placeholder=" URL: https://example.com"
+                  placeholder=" https://example.com"
                 />
                 <Input
                   type="text"
                   value={formData.route_info.url.mobile || ''}
                   onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, mobile: e.target.value })}
-                  placeholder=" URL: app://example"
+                  placeholder=" app://example"
                 />
               </div>
             )}
@@ -231,6 +247,22 @@ export const ToggleForm = ({
           onChange={(e) => onInputChange('image_url', e.target.value)}
           placeholder="https://example.com/image.jpg"
         />
+        {showLinkTypeSelect ? (
+          <Select
+            label="Link Type"
+            value={formData.route_info.link_type}
+            onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
+            options={linkTypeOptions}
+            required
+          />
+        ) : (
+          <Input
+            label="Link Type"
+            value="DIRECT"
+            readOnly
+            disabled
+          />
+        )}
         <div className="flex gap-4 pt-4 border-t">
           <Button 
             type="button" 
@@ -322,12 +354,29 @@ export const ToggleForm = ({
         }
         onChange={onRegionChange}
       />
+      {showLinkTypeSelect ? (
+        <Select
+          label="Link Type"
+          value={formData.route_info.link_type}
+          onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
+          options={linkTypeOptions}
+          required
+        />
+      ) : (
+        <Input
+          label="Link Type"
+          value="DIRECT"
+          readOnly
+          disabled
+        />
+      )}
       <Select
-        label="Link Type"
-        value={formData.route_info.link_type}
-        onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
-        options={linkTypeOptions}
-        required
+        label="Tab Type"
+        value={formData.tab_type}
+        onChange={(e) => onInputChange('tab_type', e.target.value)}
+        options={tabTypeOptions}
+        placeholder="Select Tab type"
+        required={modalType !== 'createTab' && modalType !== 'update'}
       />
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">URL Configuration</label>
@@ -363,14 +412,6 @@ export const ToggleForm = ({
           )}
         </div>
       </div>
-      <Select
-        label="Tab Type"
-        value={formData.tab_type}
-        onChange={(e) => onInputChange('tab_type', e.target.value)}
-        options={tabTypeOptions}
-        placeholder="Select Tab type"
-        required={modalType !== 'createTab' && modalType !== 'update'}
-      />
       <div className="flex gap-4 pt-4 border-t">
         <Button 
           type="button" 
