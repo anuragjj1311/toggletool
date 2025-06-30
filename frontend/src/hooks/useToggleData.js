@@ -1,69 +1,67 @@
 import { useState, useEffect } from 'react';
-import { toggleService } from '../services/toggleService';
 import { tabService } from '../services/tabService';
 
 export const useToggleData = () => {
+  const ALL_REGIONS = [
+    'Haryana', 'Punjab', 'Rajasthan', 'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 
+    'Kolkata', 'Hyderabad', 'Bihar', 'Gujarat', 'UttarPradesh', 'MadhyaPradesh', 
+    'WestBengal', 'Kerala', 'Assam', 'Odisha', 'Uttarakhand', 'Jharkhand', 
+    'Chhattisgarh', 'Telangana', 'AndhraPradesh'
+  ];
+  const ALL_TOGGLE_TYPES = ['SHOP', 'CATEGORY'];
+  const ALL_LINK_TYPES = ['DIRECT', 'ACTIVITY'];
+
   const [toggles, setToggles] = useState([]);
   const [allTabs, setAllTabs] = useState({});
   const [allTabObjects, setAllTabObjects] = useState([]);
   const [config, setConfig] = useState({
     tab_types: [],
-    toggle_types: [],
-    link_types: [],
-    regions: []
+    toggle_types: ALL_TOGGLE_TYPES,
+    link_types: ALL_LINK_TYPES,
+    regions: ALL_REGIONS
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const fetchConfig = async () => {
-    try {
-      const data = await toggleService.getAvailableOptions();
-      setConfig({
-        tab_types: data.tab_types || [],
-        toggle_types: data.toggle_types || [],
-        link_types: data.link_types || [],
-        regions: data.regions || []
-      });
-    } catch (error) {
-      console.error('Error fetching config:', error);
-      throw error;
-    }
-  };
-
   const fetchAllData = async () => {
     try {
       const data = await tabService.getTabsConfig();
-      setAllTabs(data || {});
-      console.log('allTabs:', data); 
       const allToggles = [];
-      Object.entries(data || {}).forEach(([tabName, togglesInTab]) => {
-        togglesInTab.forEach(toggle => {
+      const tabTypes = new Set();
+      const newAllTabs = {};
+      const newAllTabObjects = [];
+
+      data.forEach(tabData => {
+        const { id, title, toggles } = tabData;
+        newAllTabs[title] = toggles;
+        newAllTabObjects.push({ id, title });
+        tabTypes.add(title);
+        
+        toggles.forEach(toggle => {          
           const { start_date, end_date, ...toggleWithoutDates } = toggle;
           const existingToggle = allToggles.find(t => t.id === toggle.id);
           if (existingToggle) {
-            existingToggle.tabs.push(tabName);
+            existingToggle.tabs.push(title);
           } else {
             allToggles.push({
               ...toggleWithoutDates,
-              tabs: [tabName]
+              tabs: [title]
             });
           }
         });
       });
+      
+      setAllTabs(newAllTabs);
+      setAllTabObjects(newAllTabObjects);
       setToggles(allToggles);
+      setConfig(prevConfig => ({
+        ...prevConfig,
+        tab_types: [...tabTypes],
+      }));
     } catch (error) {
       console.error('Error fetching data:', error);
       throw error;
-    }
-  };
-
-  const fetchAllTabObjects = async () => {
-    try {
-      const tabs = await tabService.getAllTabs();
-      setAllTabObjects(tabs);
-    } catch (error) {
-      console.error('Error fetching all tab objects:', error);
     }
   };
 
@@ -71,7 +69,7 @@ export const useToggleData = () => {
     try {
       setLoading(true);
       setError(null);
-      await Promise.all([fetchConfig(), fetchAllData()]);
+      await fetchAllData();
     } catch (error) {
       setError('Failed to load data. Please try again.',error);
     } finally {
@@ -91,7 +89,6 @@ export const useToggleData = () => {
 
   useEffect(() => {
     fetchInitialData();
-    fetchAllTabObjects();
   }, []);
 
   return {

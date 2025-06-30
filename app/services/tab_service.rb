@@ -8,8 +8,7 @@ class TabService
     tabs = tabs.by_region(@params[:region]) if @params[:region].present?
     tabs = tabs.active if @params[:active] == 'true'
 
-    result = {}
-    tabs.each do |tab|
+    tabs.map do |tab|
       toggles_data = tab.tab_toggle_associations.where(deleted_at: nil).map do |association|
         links = generate_links_for_association(association)
         {
@@ -25,25 +24,12 @@ class TabService
           end_date: association.end_date
         }
       end
-      result[tab.title] = toggles_data
-    end
-    result
-  end
-
-  def show
-    tab = Tab.find(@params[:id])
-    toggles_data = tab.tab_toggle_associations.where(deleted_at: nil).includes(:linked_toggle, :link_generator).map do |association|
       {
-        title: association.linked_toggle.title
+        id: tab.id,
+        title: tab.title,
+        toggles: toggles_data
       }
     end
-    {
-      title: tab.title,
-      toggles: toggles_data,
-      start_date: tab.start_date,
-      end_date: tab.end_date,
-      regions: tab.regions
-    }
   end
 
   private

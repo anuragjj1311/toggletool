@@ -1,15 +1,10 @@
 class Api::V1::TogglesController < ApplicationController
   before_action :set_toggle, only: [:show, :tabs_for_toggle, :update, :destroy, :restore, :reset, :update_association]
-  before_action :set_tab, except: [:tabs_for_toggle, :available_options]
+  before_action :set_tab, except: [:tabs_for_toggle]
 
   def tabs_for_toggle
     result = ToggleService.new(params).tabs_for_toggle
     render json: { toggle: result }
-  end
-
-  def available_options
-    result = ToggleService.new(params).available_options
-    render json: result
   end
 
   def index

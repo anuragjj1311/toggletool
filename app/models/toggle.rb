@@ -4,7 +4,7 @@ class Toggle < ApplicationRecord
   has_many :tabs, through: :tab_toggle_associations
   
   # Define toggle types as enum - only developers can modify this
-  enum toggle_type: TOGGLE_TYPES.zip(TOGGLE_TYPES).to_h
+  enum :toggle_type, Optionable::TOGGLE_TYPES.index_with(&:itself)
   
   validates :title, presence: true
   

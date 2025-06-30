@@ -2,12 +2,6 @@ import api from './api';
 import { apiService } from './api';
 
 export const toggleService = {
-  // Get available toggle options
-  getAvailableOptions: async () => {
-    const response = await api.get('/available_options');
-    return response.data;
-  },
-
   // Get a specific toggle
   getToggle: async (toggleId) => {
     const response = await api.get(`/toggles/${toggleId}`);

@@ -1,4 +1,5 @@
 class TabToggleAssociation < ApplicationRecord
+  include Optionable
   belongs_to :tab
   belongs_to :linked_toggle, class_name: 'Toggle', foreign_key: 'toggle_id'
   has_one :link_generator, as: :linkable, dependent: :destroy
@@ -6,11 +7,8 @@ class TabToggleAssociation < ApplicationRecord
   
   alias_method :toggle, :linked_toggle
 
-  # Define valid link types as enum
-  VALID_LINK_TYPES = %w[DIRECT ACTIVITY].freeze
-
-  validates :toggle_type, presence: true, inclusion: { in: Toggle::VALID_TOGGLE_TYPES }
-  validates :link_type, presence: true, inclusion: { in: VALID_LINK_TYPES }
+  validates :toggle_type, presence: true, inclusion: { in: Optionable::TOGGLE_TYPES }
+  validates :link_type, presence: true, inclusion: { in: Optionable::LINK_TYPES }
   validates :start_date, :end_date, presence: true
   validates :toggle_id, uniqueness: { scope: :tab_id, message: "is already associated with this tab" }
   validate :end_date_after_start_date
@@ -48,7 +46,7 @@ class TabToggleAssociation < ApplicationRecord
 
   def regions_must_be_valid
     return unless regions.is_a?(Array)
-    invalid_regions = regions - Rails.application.config.regions
+    invalid_regions = regions - Optionable::REGIONS
     errors.add(:regions, "contains invalid regions: #{invalid_regions.join(', ')}") if invalid_regions.any?
   end
 end

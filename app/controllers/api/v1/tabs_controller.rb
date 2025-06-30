@@ -1,27 +1,10 @@
 class Api::V1::TabsController < ApplicationController
-  before_action :set_tab, only: [:show]
-
   def index
     result = TabService.new(params).index
     render json: result
   end
 
-  def show
-    result = TabService.new(params).show
-    render json: result
-  end
-
-  # /tabs
-  def all_tab_objects
-    tabs = Tab.all
-    render json: tabs.as_json(only: [:id, :title])
-  end
-
   private
-
-  def set_tab
-    @tab = Tab.find(params[:id])
-  end
 
   def generate_links_for_association(association)
     link_generator = association.link_generator

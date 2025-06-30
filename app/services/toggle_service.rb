@@ -1,4 +1,5 @@
 class ToggleService
+  include Optionable
   def initialize(params)
     @params = params
   end
@@ -26,15 +27,6 @@ class ToggleService
       title: toggle.title,
       type: toggle.toggle_type,
       tabs: tabs_data
-    }
-  end
-
-  def available_options
-    {
-      toggle_types: ['SHOP', 'CATEGORY'],
-      link_types: ['DIRECT', 'ACTIVITY'],
-      regions: Rails.application.config.regions,
-      tab_types: Rails.application.config.tab_types
     }
   end
 
