@@ -48,6 +48,7 @@ export const TabSection = ({
               key={toggle.id}
               toggle={toggle}
               tabName={tabName}
+              imageUrl={toggle.image_url}
               onEdit={onEditToggle}
               onToggleStatus={handleToggleStatus}
               onCreateTab={onCreateTab}

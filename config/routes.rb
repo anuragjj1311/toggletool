@@ -1,30 +1,16 @@
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
+      get 'toggles/config', to: 'tabs#index'
+      get 'tabs', to: 'tabs#all_tab_objects'
+      resources :tabs, only: [:show]
+      post   'toggles/tabs/:tab_id', to: 'toggles#create'
+      patch 'toggles/:id/restore', to: 'toggles#restore'
       get 'available_options', to: 'toggles#available_options'
-      get 'tabs/config', to: 'tabs#index'
-      resources :tabs, only: [:index, :show, :update]
-
-      resources :tabs, only: [:show, :update] do
-        resources :toggles, except: [:destroy] do
-          member do
-            patch :restore    
-            patch :reset      
-          end
-        end
-        resources :category_toggles, path: 'categories'
-        resources :shop_toggles, path: 'shops'
-      end
-
-      resources :toggles, only: [:show, :update, :destroy] do
-        member do
-          get :tabs_for_toggle, path: ''     # /api/v1/toggles/:id
-          patch :restore                     # /api/v1/toggles/:id/restore (restores all)
-          patch :reset                       # /api/v1/toggles/:id/reset (resets all)
-        end
-      end
-      
+      resources :toggles, only: [:show, :update, :destroy]
       get 'configs', to: 'configs#index'
+      post 'toggles/:id/tabs/:tab_id/associate', to: 'toggles#associate_tab'
+      patch 'toggles/:id/tabs/:tab_id/association', to: 'toggles#update_association'
     end
   end
 end

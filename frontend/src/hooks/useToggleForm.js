@@ -47,9 +47,12 @@ export const useToggleForm = () => {
         image_url: toggle.image_url || '',
         start_date: toggle.start_date || '',
         end_date: toggle.end_date || '',
-        regions: [],
-        route_info: { link_type: 'DIRECT', url: {} },
-        tab_type: ''
+        regions: toggle.regions || [],
+        route_info: { 
+          link_type: toggle.link_type || 'DIRECT', 
+          url: toggle.links || {} 
+        },
+        tab_type: toggle.tab_type || ''
       });
     } else if (type === 'createTab' && toggle) {
       setFormData({

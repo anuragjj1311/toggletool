@@ -1,12 +1,12 @@
 class Toggle < ApplicationRecord
+  include Optionable
   has_many :tab_toggle_associations, dependent: :destroy
   has_many :tabs, through: :tab_toggle_associations
   
   # Define toggle types as enum - only developers can modify this
-  VALID_TOGGLE_TYPES = %w[SHOP CATEGORY].freeze
+  enum toggle_type: TOGGLE_TYPES.zip(TOGGLE_TYPES).to_h
   
   validates :title, presence: true
-  validates :toggle_type, presence: true, inclusion: { in: VALID_TOGGLE_TYPES }
   
   scope :active, -> { where(deleted_at: nil) }
   scope :deleted, -> { where.not(deleted_at: nil) }

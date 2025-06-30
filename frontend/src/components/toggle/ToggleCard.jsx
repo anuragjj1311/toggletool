@@ -5,6 +5,7 @@ import { Button } from '../common/Button';
 export const ToggleCard = ({ 
   toggle, 
   tabName, 
+  imageUrl,
   onEdit, 
   onToggleStatus, 
   onCreateTab 
@@ -44,9 +45,9 @@ export const ToggleCard = ({
             </span>
           </div>
         </div>
-        {toggle.image_url && (
+        {imageUrl && (
           <img 
-            src={toggle.image_url} 
+            src={imageUrl} 
             alt={toggle.title}
             className={`w-12 h-12 rounded-lg object-cover border-2 border-white shadow-md ${
               isDisabled ? 'grayscale' : ''
@@ -56,10 +57,6 @@ export const ToggleCard = ({
       </div>
 
       <div className="space-y-3 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar size={14} />
-          <span>{toggle.start_date} - {toggle.end_date}</span>
-        </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <MapPin size={14} />
           <div className="flex flex-wrap gap-1">
@@ -80,6 +77,27 @@ export const ToggleCard = ({
                 : 'No link'}
           </span>
         </div>
+        {imageUrl && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="truncate">
+              <a 
+                href={imageUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+                title={imageUrl}
+              >
+                {imageUrl.length > 30 
+                  ? `${imageUrl.substring(0, 30)}...` 
+                  : imageUrl
+                }
+              </a>
+            </span>
+          </div>
+        )}
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <div className="flex flex-wrap gap-1">
             {toggle.tabs?.map(tab => (
@@ -90,6 +108,43 @@ export const ToggleCard = ({
           </div>
         </div>
       </div>
+
+      {/* Links Configuration */}
+      {toggle.links && Object.keys(toggle.links).length > 0 && (
+        <div className="bg-gray-50 rounded-lg p-2 mt-2">
+          <div className="text-xs font-semibold text-gray-700 mb-1">Links Configuration</div>
+          <div className="space-y-1">
+            {Object.entries(toggle.links).map(([key, value]) => {
+              if (typeof value === 'object' && value !== null) {
+                // For nested ACTIVITY links
+                return Object.entries(value).map(([subKey, link]) => (
+                  <div key={`${key}-${subKey}`} className="flex items-center gap-1">
+                    <Link size={12} className="text-blue-600 flex-shrink-0" />
+                    <span className="text-xs">
+                      <span className="font-medium">{key === 'default' ? subKey : `${key} - ${subKey}`}:</span>{' '}
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                        {link.length > 30 ? `${link.substring(0, 30)}...` : link}
+                      </a>
+                    </span>
+                  </div>
+                ));
+              }
+              // If value is a direct link
+              return (
+                <div key={key} className="flex items-center gap-1">
+                  <Link size={12} className="text-blue-600 flex-shrink-0" />
+                  <span className="text-xs">
+                    <span className="font-medium">{key}:</span>{' '}
+                    <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                      {value.length > 30 ? `${value.substring(0, 30)}...` : value}
+                    </a>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <Button 

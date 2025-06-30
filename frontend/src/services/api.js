@@ -45,28 +45,19 @@ export const apiService = {
   
   getAvailableOptions: () => api.get('/toggles/available_options'),
   
-  createToggle: (tabId, toggleData) => 
-    api.post(`/tabs/${tabId}/toggles`, toggleData),
-  
-  updateToggle: (tabId, toggleId, toggleData) => 
-    api.put(`/tabs/${tabId}/toggles/${toggleId}`, toggleData),
-  
-  deleteToggle: (tabId, toggleId) => 
-    api.delete(`/tabs/${tabId}/toggles/${toggleId}`),
+  deleteToggle: (toggleId) => 
+    api.delete(`/toggles/${toggleId}`),
   
   restoreToggle: (toggleId, tabId = null) => {
     if (tabId) {
-      return api.patch(`/tabs/${tabId}/toggles/${toggleId}/restore`);
+      return api.patch(`/toggles/${toggleId}/tabs/${tabId}/restore`);
     } else {
       return api.patch(`/toggles/${toggleId}/restore`);
     }
   },
   
-  resetToggle: (tabId, toggleId) => 
-    api.post(`/tabs/${tabId}/toggles/${toggleId}/reset`),
-  
-  getTogglesForTab: (tabId, params = {}) => 
-    api.get(`/tabs/${tabId}/toggles`, { params }),
+  resetToggle: (toggleId) => 
+    api.patch(`/toggles/${toggleId}/reset`),
   
   getTabsForToggle: (toggleId, params = {}) => 
     api.get(`/toggles/${toggleId}/tabs_for_toggle`, { params }),

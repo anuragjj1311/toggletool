@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_06_24_141630) do
+ActiveRecord::Schema[7.2].define(version: 2025_06_29_054534) do
   create_table "link_generators", force: :cascade do |t|
     t.string "type", null: false
     t.string "linkable_type", null: false
@@ -34,6 +34,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_24_141630) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.string "image_url"
     t.index ["deleted_at"], name: "index_tab_toggle_associations_on_deleted_at"
     t.index ["link_type"], name: "index_tab_toggle_associations_on_link_type"
     t.index ["start_date", "end_date"], name: "index_tab_toggle_associations_on_start_date_and_end_date"
@@ -57,7 +58,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_06_24_141630) do
   create_table "toggles", force: :cascade do |t|
     t.string "title", null: false
     t.string "toggle_type", null: false
-    t.string "image_url"
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

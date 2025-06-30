@@ -14,27 +14,14 @@ export const toggleService = {
     return response.data;
   },
 
-  // Create a new toggle
-  createToggle: async (tabId, toggleData) => {
-    const response = await apiService.createToggle(tabId, toggleData);
-    return response.data;
-  },
-
-  // Update a toggle
-  updateToggle: async (toggleId, data, tabId) => {
-    const response = await api.patch(`/tabs/${tabId}/toggles/${toggleId}`, data);
-    return response.data;
-  },
-
-  // Update a toggle for all tabs
-  updateToggleForAllTabs: async (toggleId, data) => {
-    const response = await api.patch(`/toggles/${toggleId}`, { toggle: data });
+  createToggle: async (tab_id, data) => {
+    const response = await api.post(`/toggles/tabs/${tab_id}`, data);
     return response.data;
   },
 
   // Delete a toggle
   deleteToggle: async (toggleId) => {
-    const response = await api.delete(`/toggles/${toggleId}`);
+    const response = await apiService.deleteToggle(toggleId);
     return response.data;
   },
 
@@ -44,33 +31,31 @@ export const toggleService = {
     return response.data;
   },
 
-  // Restore a toggle
-  restoreToggle: async (toggleId, options = {}) => {
-    const { tabId, restoreAll = false } = options;
-    
-    if (restoreAll || !tabId) {
-      // Restore for all tabs
-      const response = await api.patch(`/toggles/${toggleId}/restore`);
+  // Restore a toggle for a specific tab
+  restoreToggle: async (toggleId, tabId) => {
+    if (tabId) {
+      const response = await apiService.restoreToggle(toggleId, tabId);
       return response.data;
     } else {
-      // Restore for specific tab
-      const response = await api.patch(`/tabs/${tabId}/toggles/${toggleId}/restore`);
+      const response = await apiService.restoreToggle(toggleId);
       return response.data;
     }
   },
 
   resetToggle: async (toggleId) => {
-    const response = await api.patch(`/toggles/${toggleId}/reset`);
+    const response = await apiService.resetToggle(toggleId);
     return response.data;
   },
 
-  restoreToggleForAllTabs: async (toggleId) => {
-    const response = await api.patch(`/toggles/${toggleId}/restore`);
+  // Associate an existing toggle with a tab
+  associateToggleWithTab: async (toggleId, tabId, data = {}) => {
+    const response = await api.post(`/toggles/${toggleId}/tabs/${tabId}/associate`, data);
     return response.data;
   },
 
-  restoreToggleForSpecificTab: async (toggleId, tabId) => {
-    const response = await api.patch(`/tabs/${tabId}/toggles/${toggleId}/restore`);
+  // Update tab-toggle association for a specific tab and toggle
+  updateTabToggleAssociation: async (toggleId, tabId, data = {}) => {
+    const response = await api.patch(`/toggles/${toggleId}/tabs/${tabId}/association`, { association: data });
     return response.data;
   },
 }; 

@@ -48,30 +48,35 @@ end
 puts "Seeded #{Tab.count} predefined tabs"
 
 # Create some initial toggles
-toggles = [
+# Remove image_url from here, store it separately
+initial_toggles = [
   { title: 'Summer Sale', toggle_type: 'SHOP', image_url: 'https://example.com/summer.jpg' },
   { title: 'New Arrivals', toggle_type: 'CATEGORY', image_url: 'https://example.com/new.jpg' }
 ]
 
-toggles.each do |toggle_attrs|
+toggle_objs = []
+initial_toggles.each do |toggle_attrs|
+  image_url = toggle_attrs.delete(:image_url) # Remove image_url from toggle_attrs
   toggle = Toggle.create!(toggle_attrs)
   DirectLink.create!(
     linkable: toggle,
     url: { 'default' => 'https://example.com' }
   )
+  toggle_objs << { toggle: toggle, image_url: image_url }
 end
 
-# Associate toggles with tabs
+# Associate toggles with tabs, using the correct image_url per association
 Tab.find_each do |tab|
-  Toggle.find_each do |toggle|
+  toggle_objs.each do |toggle_obj|
     TabToggleAssociation.create!(
       tab: tab,
-      linked_toggle: toggle,
-      toggle_type: toggle.toggle_type,
+      linked_toggle: toggle_obj[:toggle],
+      toggle_type: toggle_obj[:toggle].toggle_type,
       link_type: 'DIRECT',
       start_date: Date.today,
       end_date: Date.today + 1.year,
-      regions: tab.regions
+      regions: tab.regions,
+      image_url: toggle_obj[:image_url] # Set image_url on the association
     )
   end
 end

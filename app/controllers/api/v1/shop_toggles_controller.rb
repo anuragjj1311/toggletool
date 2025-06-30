@@ -3,88 +3,46 @@ class Api::V1::ShopTogglesController < ApplicationController
   before_action :set_shop_association, only: [:show, :update, :destroy, :restore, :reset]
 
   def index
-    @shop_associations = @tab.tab_toggle_associations
-                            .where(toggle_type: 'Shop')
-                            .includes(linked_toggle: :link_generator)
-
-    render json: @shop_associations.as_json(include: { linked_toggle: { include: :link_generator } })
+    result = ShopToggleService.new(params).index
+    render json: result
   end
 
   def create
-    params[:toggle][:toggle_type] = 'Shop'
-    
-    ActiveRecord::Base.transaction do
-      @toggle = Toggle.new(toggle_params.except(:route_info, :regions, :start_date, :end_date))
-      
-      if toggle_params[:route_info].present?
-        @toggle.route_info = toggle_params[:route_info]
-      end
-      
-      unless @toggle.save
-        render_error(@toggle.errors.full_messages.join(', '))
-        return
-      end
-
-      @association = @tab.tab_toggle_associations.build(
-        toggle_id: @toggle.id, 
-        toggle_type: 'Shop',
-        link_type: toggle_params.dig(:route_info, :link_type) || 'DirectLink',
-        start_date: toggle_params[:start_date],
-        end_date: toggle_params[:end_date],
-        regions: toggle_params[:regions]
-      )
-
-      if @association.save
-        render json: @association.as_json(include: { linked_toggle: { include: :link_generator } }), status: :created
-      else
-        render_error(@association.errors.full_messages.join(', '))
-      end
+    result = ShopToggleService.new(params).create
+    if result.is_a?(Hash) && result[:error]
+      render_error(result[:error])
+    else
+      render json: result, status: :created
     end
   end
 
   def update
-    ActiveRecord::Base.transaction do
-      if @association.linked_toggle.update(toggle_params.except(:route_info, :regions, :start_date, :end_date, :toggle_type))
-        if toggle_params[:route_info].present?
-          @association.linked_toggle.route_info = toggle_params[:route_info]
-          @association.linked_toggle.save!
-        end
-        
-        association_params = {
-          link_type: toggle_params.dig(:route_info, :link_type) || @association.link_type,
-          start_date: toggle_params[:start_date],
-          end_date: toggle_params[:end_date],
-          regions: toggle_params[:regions]
-        }.compact
-        
-        if @association.update(association_params)
-          render json: @association.as_json(include: { linked_toggle: { include: :link_generator } })
-        else
-          render_error(@association.errors.full_messages.join(', '))
-        end
+    result = ShopToggleService.new(params).update
+    if result.is_a?(Hash) && result[:error]
+      render_error(result[:error])
       else
-        render_error(@association.linked_toggle.errors.full_messages.join(', '))
-      end
+      render json: result
     end
   end
 
   def show
-    render json: @association.as_json(include: { linked_toggle: { include: :link_generator } })
+    result = ShopToggleService.new(params).show
+    render json: result
   end
 
   def destroy
-    @association.linked_toggle.soft_delete!
-    render_success({}, 'Shop Toggle soft deleted successfully')
+    result = ShopToggleService.new(params).destroy
+    render_success({}, result[:message])
   end
 
   def restore
-    @association.linked_toggle.restore!
-    render_success(@association.as_json(include: { linked_toggle: { include: :link_generator } }), 'Shop Toggle restored successfully')
+    result = ShopToggleService.new(params).restore
+    render_success(result, 'Shop Toggle restored successfully')
   end
 
   def reset
-    @association.linked_toggle.reset_to_default!
-    render_success(@association.as_json(include: { linked_toggle: { include: :link_generator } }), 'Shop Toggle reset to default successfully')
+    result = ShopToggleService.new(params).reset
+    render_success(result, 'Shop Toggle reset to default successfully')
   end
 
   private
@@ -106,5 +64,13 @@ class Api::V1::ShopTogglesController < ApplicationController
       regions: [],
       route_info: [:link_type, :url]
     )
+  end
+
+  def render_error(message, status = :unprocessable_entity)
+    render json: { error: message }, status: status
+  end
+
+  def render_success(data, message = 'Success')
+    render json: { data: data, message: message }
   end
 end

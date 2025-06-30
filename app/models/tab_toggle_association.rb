@@ -12,6 +12,7 @@ class TabToggleAssociation < ApplicationRecord
   validates :toggle_type, presence: true, inclusion: { in: Toggle::VALID_TOGGLE_TYPES }
   validates :link_type, presence: true, inclusion: { in: VALID_LINK_TYPES }
   validates :start_date, :end_date, presence: true
+  validates :toggle_id, uniqueness: { scope: :tab_id, message: "is already associated with this tab" }
   validate :end_date_after_start_date
   validate :regions_must_be_valid
 

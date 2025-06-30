@@ -1,71 +1,20 @@
 class Api::V1::TabsController < ApplicationController
-  before_action :set_tab, only: [:show, :update]
+  before_action :set_tab, only: [:show]
 
   def index
-    @tabs = Tab.includes(tab_toggle_associations: [:linked_toggle, :link_generator]).all
-    @tabs = @tabs.by_region(params[:region]) if params[:region].present?
-    @tabs = @tabs.active if params[:active] == 'true'
-
-    result = {}
-    
-    @tabs.each do |tab|
-      toggles_data = tab.tab_toggle_associations.where(deleted_at: nil).map do |association|
-        links = generate_links_for_association(association)
-        
-        {
-          id: association.linked_toggle.id,
-          title: association.linked_toggle.title,
-          type: association.toggle_type,
-          start_date: association.start_date,
-          end_date: association.end_date,
-          regions: association.regions,
-          link_type: association.link_type,
-          links: links,
-          deleted_at: association.linked_toggle.deleted_at
-        }
-      end
-      
-      result[tab.title] = toggles_data
-    end
-
-    render json: { all_tabs: result }
+    result = TabService.new(params).index
+    render json: result
   end
 
   def show
-    toggles_data = @tab.tab_toggle_associations.where(deleted_at: nil).includes(:linked_toggle, :link_generator).map do |association|
-      links = generate_links_for_association(association)
-      
-      {
-        id: association.linked_toggle.id,
-        title: association.linked_toggle.title,
-        type: association.toggle_type,
-        start_date: association.start_date,
-        end_date: association.end_date,
-        regions: association.regions,
-        link_type: association.link_type,
-        links: links,
-        deleted_at: association.linked_toggle.deleted_at
-      }
-    end
-
-    render json: {
-      tab: {
-        id: @tab.id,
-        title: @tab.title,
-        start_date: @tab.start_date,
-        end_date: @tab.end_date,
-        regions: @tab.regions,
-        toggles: toggles_data
-      }
-    }
+    result = TabService.new(params).show
+    render json: result
   end
 
-  def update
-    if @tab.update(tab_params)
-      render json: @tab.as_json(except: [:tab_type])
-    else
-      render_error(@tab.errors.full_messages.join(', '))
-    end
+  # /tabs
+  def all_tab_objects
+    tabs = Tab.all
+    render json: tabs.as_json(only: [:id, :title])
   end
 
   private
@@ -80,16 +29,32 @@ class Api::V1::TabsController < ApplicationController
 
     case association.link_type
     when 'DIRECT'
-        { 'default' => link_generator.url }
+      url = link_generator.url
+      # If url is a hash, flatten it
+      url = url['default'] if url.is_a?(Hash) && url['default'].is_a?(String)
+      { 'default' => url }
     when 'ACTIVITY'
-        url_data = link_generator.url
+      url_data = link_generator.url
+      # If url_data is a hash and has a 'default' key that is a string, flatten it
+      if url_data.is_a?(Hash) && url_data['default'].is_a?(String) && url_data.keys.length == 1
+        { 'default' => url_data['default'] }
+      else
         url_data.is_a?(Hash) ? url_data : { 'default' => url_data }
+      end
     else
-        { 'default' => '#' }
+      { 'default' => '#' }
     end
   end
 
   def tab_params
     params.require(:tab).permit(:start_date, :end_date, regions: [])
+  end
+
+  def tab_create_params
+    params.require(:tab).permit(:title, :start_date, :end_date, regions: [])
+  end
+
+  def render_error(message, status = :unprocessable_entity)
+    render json: { error: message }, status: status
   end
 end

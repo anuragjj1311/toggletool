@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save } from 'lucide-react';
 import { Input } from '../common/Input';
 import { Select } from '../common/Select';
 import { CheckboxGroup } from '../common/CheckboxGroup';
 import { Button } from '../common/Button';
+import { tabService } from '../../services/tabService';
+import { toggleService } from '../../services/toggleService';
 
 export const ToggleForm = ({ 
   formData, 
@@ -19,12 +21,23 @@ export const ToggleForm = ({
     start_date: '',
     end_date: ''
   });
+  
+  const hasSetCategoryLinkType = useRef(false);
 
   useEffect(() => {
-    if (formData.toggle_type === 'CATEGORY' && formData.route_info.link_type !== 'DIRECT') {
+    // Only set link type to DIRECT for CATEGORY if it's not already set and we haven't set it before
+    if (formData.toggle_type === 'CATEGORY' && 
+        formData.route_info.link_type !== 'DIRECT' && 
+        !hasSetCategoryLinkType.current) {
+      hasSetCategoryLinkType.current = true;
       onInputChange('route_info.link_type', 'DIRECT');
     }
-  }, [formData.toggle_type]);
+    
+    // Reset the flag when toggle type changes
+    if (formData.toggle_type !== 'CATEGORY') {
+      hasSetCategoryLinkType.current = false;
+    }
+  }, [formData.toggle_type, onInputChange]);
 
   const validateDates = () => {
     const newErrors = {
@@ -88,16 +101,14 @@ export const ToggleForm = ({
           required
         />
         <Input
-          label="Title"
+          label="Toggle Title"
           value={selectedToggle ? selectedToggle.title : formData.title}
           readOnly
         />
-        <Select
+        <Input
           label="Toggle Type"
-          value={formData.toggle_type}
-          onChange={(e) => onInputChange('toggle_type', e.target.value)}
-          options={toggleTypeOptions}
-          required={false}
+          value={selectedToggle ? selectedToggle.type : formData.toggle_type}
+          readOnly
         />
         <Input
           label="Image URL"
@@ -176,11 +187,13 @@ export const ToggleForm = ({
                 onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
                 placeholder="https://example.com"
                 required
+                minLength={5}
               />
             ) : formData.route_info.link_type === 'ACTIVITY' ? (
               <ActivityLinksInput
                 value={formData.route_info.url}
                 onChange={linksObj => onInputChange('route_info.url', linksObj)}
+                required
               />
             ) : (
               <div className="space-y-3">
@@ -240,12 +253,99 @@ export const ToggleForm = ({
           placeholder="Select toggle type"
           required
         />
+        <div className="flex gap-4 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="primary" 
+            icon={Save}
+            className="flex-1"
+          >
+            Update Toggle (All Tabs)
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  if (modalType === 'update') {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Select
+          label="Select Tab Type"
+          value={formData.tab_type}
+          onChange={e => onInputChange('tab_type', e.target.value)}
+          options={tabTypeOptions.filter(option => selectedToggle?.tabs?.includes(option.value))}
+          placeholder="Select tab type"
+          required
+        />
+        <Input
+          label="Toggle Title"
+          value={selectedToggle ? selectedToggle.title : formData.title}
+          readOnly
+        />
+        <Input
+          label="Toggle Type"
+          value={selectedToggle ? selectedToggle.type : formData.toggle_type}
+          readOnly
+        />
         <Input
           label="Image URL"
           type="url"
           value={formData.image_url}
           onChange={(e) => onInputChange('image_url', e.target.value)}
           placeholder="https://example.com/image.jpg"
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Input
+              label="Start Date"
+              type="date"
+              value={formData.start_date}
+              onChange={(e) => {
+                onInputChange('start_date', e.target.value);
+                setErrors(prev => ({ ...prev, start_date: '' }));
+              }}
+              required
+              error={errors.start_date}
+            />
+            {errors.start_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
+            )}
+          </div>
+          <div>
+            <Input
+              label="End Date"
+              type="date"
+              value={formData.end_date}
+              onChange={(e) => {
+                onInputChange('end_date', e.target.value);
+                setErrors(prev => ({ ...prev, end_date: '' }));
+              }}
+              required
+              error={errors.end_date}
+            />
+            {errors.end_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
+            )}
+          </div>
+        </div>
+        <CheckboxGroup
+          label="Regions"
+          options={regionOptions}
+          selectedValues={
+            formData.regions.length === config.regions.length && config.regions.length > 0
+              ? ['__all__', ...formData.regions]
+              : formData.regions
+          }
+          onChange={onRegionChange}
         />
         {showLinkTypeSelect ? (
           <Select
@@ -263,6 +363,42 @@ export const ToggleForm = ({
             disabled
           />
         )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">URL Configuration</label>
+          <div className="space-y-3">
+            {formData.route_info.link_type === 'DIRECT' ? (
+              <Input
+                type="url"
+                value={formData.route_info.url.default || ''}
+                onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
+                placeholder="https://example.com"
+                required
+                minLength={5}
+              />
+            ) : formData.route_info.link_type === 'ACTIVITY' ? (
+              <ActivityLinksInput
+                value={formData.route_info.url}
+                onChange={linksObj => onInputChange('route_info.url', linksObj)}
+                required
+              />
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  type="url"
+                  value={formData.route_info.url.web || ''}
+                  onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, web: e.target.value })}
+                  placeholder=" https://example.com"
+                />
+                <Input
+                  type="text"
+                  value={formData.route_info.url.mobile || ''}
+                  onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, mobile: e.target.value })}
+                  placeholder=" app://example"
+                />
+              </div>
+            )}
+          </div>
+        </div>
         <div className="flex gap-4 pt-4 border-t">
           <Button 
             type="button" 
@@ -278,7 +414,158 @@ export const ToggleForm = ({
             icon={Save}
             className="flex-1"
           >
-            Update Toggle (All Tabs)
+            Update Tab
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  if (modalType === 'create') {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Input
+          label="Title"
+          value={formData.title}
+          onChange={(e) => onInputChange('title', e.target.value)}
+          placeholder="Enter toggle title"
+          required
+        />
+        <Select
+          label="Toggle Type"
+          value={formData.toggle_type}
+          onChange={(e) => onInputChange('toggle_type', e.target.value)}
+          options={toggleTypeOptions}
+          placeholder="Select toggle type"
+          required
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Input
+              label="Start Date"
+              type="date"
+              value={formData.start_date}
+              onChange={(e) => {
+                onInputChange('start_date', e.target.value);
+                setErrors(prev => ({ ...prev, start_date: '' }));
+              }}
+              required
+              error={errors.start_date}
+            />
+            {errors.start_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
+            )}
+          </div>
+          <div>
+            <Input
+              label="End Date"
+              type="date"
+              value={formData.end_date}
+              onChange={(e) => {
+                onInputChange('end_date', e.target.value);
+                setErrors(prev => ({ ...prev, end_date: '' }));
+              }}
+              required
+              error={errors.end_date}
+            />
+            {errors.end_date && (
+              <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
+            )}
+          </div>
+        </div>
+        <Input
+          label="Image URL"
+          type="url"
+          value={formData.image_url}
+          onChange={(e) => onInputChange('image_url', e.target.value)}
+          placeholder="https://example.com/image.jpg"
+        />
+        <CheckboxGroup
+          label="Regions"
+          options={regionOptions}
+          selectedValues={
+            formData.regions.length === config.regions.length && config.regions.length > 0
+              ? ['__all__', ...formData.regions]
+              : formData.regions
+          }
+          onChange={onRegionChange}
+        />
+        {showLinkTypeSelect ? (
+          <Select
+            label="Link Type"
+            value={formData.route_info.link_type}
+            onChange={(e) => onInputChange('route_info.link_type', e.target.value)}
+            options={linkTypeOptions}
+            required
+          />
+        ) : (
+          <Input
+            label="Link Type"
+            value="DIRECT"
+            readOnly
+            disabled
+          />
+        )}
+        <Select
+          label="Tab Type"
+          value={formData.tab_type}
+          onChange={(e) => onInputChange('tab_type', e.target.value)}
+          options={tabTypeOptions}
+          placeholder="Select Tab type"
+          required
+        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">URL Configuration</label>
+          <div className="space-y-3">
+            {formData.route_info.link_type === 'DIRECT' ? (
+              <Input
+                type="url"
+                value={formData.route_info.url.default || ''}
+                onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
+                placeholder="https://example.com"
+                required
+                minLength={5}
+              />
+            ) : formData.route_info.link_type === 'ACTIVITY' ? (
+              <ActivityLinksInput
+                value={formData.route_info.url}
+                onChange={linksObj => onInputChange('route_info.url', linksObj)}
+                required
+              />
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  type="url"
+                  value={formData.route_info.url.web || ''}
+                  onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, web: e.target.value })}
+                  placeholder=" https://example.com"
+                />
+                <Input
+                  type="text"
+                  value={formData.route_info.url.mobile || ''}
+                  onChange={(e) => onInputChange('route_info.url', { ...formData.route_info.url, mobile: e.target.value })}
+                  placeholder=" app://example"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-4 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            variant="primary" 
+            icon={Save}
+            className="flex-1"
+          >
+            Create Toggle
           </Button>
         </div>
       </form>
@@ -310,40 +597,6 @@ export const ToggleForm = ({
         onChange={(e) => onInputChange('image_url', e.target.value)}
         placeholder="https://example.com/image.jpg"
       />
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Input
-            label="Start Date"
-            type="date"
-            value={formData.start_date}
-            onChange={(e) => {
-              onInputChange('start_date', e.target.value);
-              setErrors(prev => ({ ...prev, start_date: '' }));
-            }}
-            required
-            error={errors.start_date}
-          />
-          {errors.start_date && (
-            <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>
-          )}
-        </div>
-        <div>
-          <Input
-            label="End Date"
-            type="date"
-            value={formData.end_date}
-            onChange={(e) => {
-              onInputChange('end_date', e.target.value);
-              setErrors(prev => ({ ...prev, end_date: '' }));
-            }}
-            required
-            error={errors.end_date}
-          />
-          {errors.end_date && (
-            <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>
-          )}
-        </div>
-      </div>
       <CheckboxGroup
         label="Regions"
         options={regionOptions}
@@ -376,7 +629,7 @@ export const ToggleForm = ({
         onChange={(e) => onInputChange('tab_type', e.target.value)}
         options={tabTypeOptions}
         placeholder="Select Tab type"
-        required={modalType !== 'createTab' && modalType !== 'update'}
+        required
       />
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">URL Configuration</label>
@@ -388,11 +641,13 @@ export const ToggleForm = ({
               onChange={(e) => onInputChange('route_info.url', { default: e.target.value })}
               placeholder="https://example.com"
               required
+              minLength={5}
             />
           ) : formData.route_info.link_type === 'ACTIVITY' ? (
             <ActivityLinksInput
               value={formData.route_info.url}
               onChange={linksObj => onInputChange('route_info.url', linksObj)}
+              required
             />
           ) : (
             <div className="space-y-3">
@@ -436,22 +691,43 @@ export const ToggleForm = ({
   );
 };
 
-const ActivityLinksInput = ({ value = {}, onChange }) => {
+const ActivityLinksInput = ({ value = {}, onChange, required }) => {
   const [pairs, setPairs] = React.useState(
     Object.entries(value).length > 0
       ? Object.entries(value).map(([key, url]) => ({ key, url }))
       : [{ key: '', url: '' }]
   );
 
+  // Update pairs when value prop changes (but only if it's different)
   React.useEffect(() => {
-    // Convert pairs to object and call onChange
+    const newPairs = Object.entries(value).length > 0
+      ? Object.entries(value).map(([key, url]) => ({ key, url }))
+      : [{ key: '', url: '' }];
+    
+    // Only update if the pairs are actually different
+    const currentPairsStr = JSON.stringify(pairs);
+    const newPairsStr = JSON.stringify(newPairs);
+    
+    if (currentPairsStr !== newPairsStr) {
+      setPairs(newPairs);
+    }
+  }, [value]);
+
+  // Convert pairs to object and call onChange when pairs change
+  React.useEffect(() => {
     const obj = {};
     pairs.forEach(({ key, url }) => {
-      if (key) obj[key] = url;
+      if (key && url) obj[key] = url;
     });
-    onChange(obj);
-    // eslint-disable-next-line
-  }, [pairs]);
+    
+    // Only call onChange if the object is different from the current value
+    const currentValueStr = JSON.stringify(value);
+    const newValueStr = JSON.stringify(obj);
+    
+    if (currentValueStr !== newValueStr) {
+      onChange(obj);
+    }
+  }, [pairs, onChange, value]);
 
   const handlePairChange = (idx, field, val) => {
     setPairs(prev => prev.map((pair, i) => i === idx ? { ...pair, [field]: val } : pair));
@@ -475,7 +751,7 @@ const ActivityLinksInput = ({ value = {}, onChange }) => {
             placeholder="Key (e.g. ethnic)"
             value={pair.key}
             onChange={e => handlePairChange(idx, 'key', e.target.value)}
-            required
+            required={required}
           />
           <input
             type="url"
@@ -483,7 +759,7 @@ const ActivityLinksInput = ({ value = {}, onChange }) => {
             placeholder="URL for this key"
             value={pair.url}
             onChange={e => handlePairChange(idx, 'url', e.target.value)}
-            required
+            required={required}
           />
           {pairs.length > 1 && (
             <button

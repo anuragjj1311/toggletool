@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from './components/common/Button';
 import { Modal } from './components/common/Modal';
@@ -10,11 +10,14 @@ import { EmptyState } from './components/toggle/EmptyState';
 import { useToggleData } from './hooks/useToggleData';
 import { useToggleForm } from './hooks/useToggleForm';
 import { toggleService } from './services/toggleService';
+import api from './services/api';
+import { tabService } from './services/tabService';
 
 const ToggleManagementDashboard = () => {
   const { 
     toggles, 
     allTabs,
+    allTabObjects,
     config, 
     loading, 
     error, 
@@ -22,6 +25,7 @@ const ToggleManagementDashboard = () => {
     fetchInitialData, 
     showNotification 
   } = useToggleData();
+
 
   const { 
     showModal, 
@@ -33,6 +37,35 @@ const ToggleManagementDashboard = () => {
     handleInputChange, 
     handleRegionChange 
   } = useToggleForm();
+
+  const [showTabModal, setShowTabModal] = useState(false);
+  const [tabForm, setTabForm] = useState({
+    title: '',
+    start_date: '',
+    end_date: '',
+    regions: [],
+  });
+
+  const handleTabInputChange = (field, value) => {
+    setTabForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleTabRegionChange = (regions) => {
+    setTabForm(prev => ({ ...prev, regions }));
+  };
+
+  const handleTabSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await tabService.createTab({ tab: tabForm });
+      setShowTabModal(false);
+      setTabForm({ title: '', start_date: '', end_date: '', regions: [] });
+      fetchInitialData();
+      showNotification('Tab created successfully!');
+    } catch (err) {
+      showNotification('Failed to create tab.', 'error');
+    }
+  };
 
   useEffect(() => {
     console.log('Dashboard mounted');
@@ -52,58 +85,63 @@ const ToggleManagementDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.start_date || !formData.end_date) {
-      showNotification('Start date and End date are required.', 'error');
-      return;
-    }
     try {
-      const cleanRegions = formData.regions.filter(r => r !== '__all__');
+      const cleanRegions = formData.regions ? formData.regions.filter(r => r !== '__all__') : [];
       const cleanFormData = { ...formData, regions: cleanRegions };
-
       console.log('FormData before submission:', cleanFormData); 
       if (modalType === 'create') {
-        const tabIndex = config.tab_types.findIndex(
-          t => t === cleanFormData.tab_type
-        );
-        const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
+        // Use allTabObjects to find the real tab ID by title (case-insensitive)
+        const selectedTabObj = allTabObjects.find(tab => tab.title.toLowerCase() === cleanFormData.tab_type.toLowerCase());
+        const tabId = selectedTabObj ? selectedTabObj.id : null;
+        if (!tabId) {
+          showNotification('Tab not found. Please try again.', 'error');
+          return;
+        }
         await toggleService.createToggle(tabId, {toggle: cleanFormData});
       } else if (modalType === 'createTab') {
-        const tabIndex = config.tab_types.findIndex(
-          t => t === cleanFormData.tab_type
-        );
-        const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
-        const submitData = {
-          toggle: {
-            title: cleanFormData.title,
-            toggle_type: cleanFormData.toggle_type,
-            image_url: cleanFormData.image_url,
-            start_date: cleanFormData.start_date,
-            end_date: cleanFormData.end_date,
-            regions: cleanFormData.regions,
-            route_info: cleanFormData.route_info
-          },
-          tab_type_id: tabId
+        // Debug log
+        console.log('allTabObjects:', allTabObjects);
+        console.log('Looking for tab_type:', cleanFormData.tab_type);
+        // Use allTabObjects to find the real tab ID by title (case-insensitive)
+        const selectedTabObj = allTabObjects.find(tab => tab.title.toLowerCase() === cleanFormData.tab_type.toLowerCase());
+        const tabId = selectedTabObj ? selectedTabObj.id : null;
+        if (!tabId) {
+          showNotification('Tab not found. Please try again.', 'error');
+          return;
+        }
+        // Associate the existing toggle with the selected tab
+        await toggleService.associateToggleWithTab(selectedToggle.id, tabId, {
+          route_info: cleanFormData.route_info,
+          regions: cleanFormData.regions,
+          image_url: cleanFormData.image_url,
+          start_date: cleanFormData.start_date,
+          end_date: cleanFormData.end_date
+        });
+        showNotification('Tab associated with toggle successfully!');
+        closeModal();
+        fetchInitialData();
+        return;
+      } else if (modalType === 'update') {
+        const selectedTabObj = allTabObjects.find(tab => tab.title.toLowerCase() === cleanFormData.tab_type.toLowerCase());
+        const tabId = selectedTabObj ? selectedTabObj.id : null;
+        if (!tabId) {
+          showNotification('Tab not found. Please try again.', 'error');
+          return;
+        }
+
+        const associationData = {
+          route_info: cleanFormData.route_info,
+          regions: cleanFormData.regions,
+          image_url: cleanFormData.image_url,
+          start_date: cleanFormData.start_date,
+          end_date: cleanFormData.end_date,
         };
-        console.log('Submitting createTab with data:', submitData);
-        await toggleService.createToggle(tabId, submitData);
-      } else if (modalType === 'update' && selectedToggle) {
-        const tabIndex = config.tab_types.findIndex(
-          t => t === cleanFormData.tab_type
-        );
-        const tabId = tabIndex !== -1 ? tabIndex + 1 : 2;
-        const submitData = {
-          toggle: {
-            title: cleanFormData.title,
-            toggle_type: cleanFormData.toggle_type,
-            image_url: cleanFormData.image_url,
-            start_date: cleanFormData.start_date,
-            end_date: cleanFormData.end_date,
-            regions: cleanFormData.regions,
-            route_info: cleanFormData.route_info
-          }
-        };
-        console.log('Updating toggle with data:', submitData);
-        await toggleService.updateToggle(selectedToggle.id, submitData, tabId);
+
+        await toggleService.updateTabToggleAssociation(selectedToggle.id, tabId, associationData);
+        showNotification('Tab association updated successfully!');
+        closeModal();
+        fetchInitialData();
+        return;
       }
       showNotification(`Toggle ${modalType}d successfully!`);
       closeModal();
@@ -145,12 +183,14 @@ const ToggleManagementDashboard = () => {
         onSubmit={async (e) => {
           e.preventDefault();
           try {
-            await toggleService.updateToggleForAllTabs(toggle.id, formData);
+            // Update toggle for all tabs by updating the toggle directly
+            const response = await api.patch(`/toggles/${toggle.id}`, { toggle: formData });
             showNotification('Toggle updated for all tabs!');
             closeModal();
             fetchInitialData();
           } catch (error) {
-            showNotification('Error updating toggle for all tabs.', error);
+            console.error('Error updating toggle for all tabs:', error);
+            showNotification('Error updating toggle for all tabs.', 'error');
           }
         }}
         onCancel={closeModal}
@@ -205,9 +245,14 @@ const ToggleManagementDashboard = () => {
               </h1>
               <p className="text-gray-600 mt-1">Manage your app toggles and Tabs</p>
             </div>
-            <Button onClick={() => openModal('create')} icon={Plus}>
-              Create Toggle
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => openModal('create')} icon={Plus}>
+                Create Toggle
+              </Button>
+              <Button onClick={() => setShowTabModal(true)} variant="secondary">
+                Create Tab
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -250,6 +295,64 @@ const ToggleManagementDashboard = () => {
           onCancel={closeModal}
           selectedToggle={selectedToggle}
         />
+      </Modal>
+
+      {/* Modal for Create Tab */}
+      <Modal
+        isOpen={showTabModal}
+        onClose={() => setShowTabModal(false)}
+        title="Create New Tab"
+      >
+        <form onSubmit={handleTabSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tab Name</label>
+            <input
+              type="text"
+              value={tabForm.title}
+              onChange={e => handleTabInputChange('title', e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+            <input
+              type="date"
+              value={tabForm.start_date}
+              onChange={e => handleTabInputChange('start_date', e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+            <input
+              type="date"
+              value={tabForm.end_date}
+              onChange={e => handleTabInputChange('end_date', e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Regions</label>
+            <input
+              type="text"
+              value={tabForm.regions.join(', ')}
+              onChange={e => handleTabRegionChange(e.target.value.split(',').map(r => r.trim()).filter(Boolean))}
+              className="w-full border rounded px-3 py-2"
+              placeholder="Comma separated regions"
+            />
+          </div>
+          <div className="flex gap-4 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => setShowTabModal(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" className="flex-1">
+              Create Tab
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

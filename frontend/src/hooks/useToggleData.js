@@ -5,6 +5,7 @@ import { tabService } from '../services/tabService';
 export const useToggleData = () => {
   const [toggles, setToggles] = useState([]);
   const [allTabs, setAllTabs] = useState({});
+  const [allTabObjects, setAllTabObjects] = useState([]);
   const [config, setConfig] = useState({
     tab_types: [],
     toggle_types: [],
@@ -33,19 +34,18 @@ export const useToggleData = () => {
   const fetchAllData = async () => {
     try {
       const data = await tabService.getTabsConfig();
-      setAllTabs(data.all_tabs || {});
+      setAllTabs(data || {});
+      console.log('allTabs:', data); 
       const allToggles = [];
-      Object.entries(data.all_tabs || {}).forEach(([tabName, togglesInTab]) => {
+      Object.entries(data || {}).forEach(([tabName, togglesInTab]) => {
         togglesInTab.forEach(toggle => {
-
+          const { start_date, end_date, ...toggleWithoutDates } = toggle;
           const existingToggle = allToggles.find(t => t.id === toggle.id);
           if (existingToggle) {
-
             existingToggle.tabs.push(tabName);
           } else {
-
             allToggles.push({
-              ...toggle,
+              ...toggleWithoutDates,
               tabs: [tabName]
             });
           }
@@ -55,6 +55,15 @@ export const useToggleData = () => {
     } catch (error) {
       console.error('Error fetching data:', error);
       throw error;
+    }
+  };
+
+  const fetchAllTabObjects = async () => {
+    try {
+      const tabs = await tabService.getAllTabs();
+      setAllTabObjects(tabs);
+    } catch (error) {
+      console.error('Error fetching all tab objects:', error);
     }
   };
 
@@ -82,11 +91,13 @@ export const useToggleData = () => {
 
   useEffect(() => {
     fetchInitialData();
+    fetchAllTabObjects();
   }, []);
 
   return {
     toggles,
     allTabs,
+    allTabObjects,
     config,
     loading,
     error,

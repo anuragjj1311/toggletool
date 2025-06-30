@@ -1,14 +1,12 @@
 class Tab < ApplicationRecord
+  include Optionable
   has_many :tab_toggle_associations, dependent: :destroy
   has_many :toggles, through: :tab_toggle_associations
 
-  VALID_TAB_TYPES = Rails.application.config.tab_types
-  
-  validates :title, presence: true, inclusion: { in: VALID_TAB_TYPES }
+  validates :title, presence: true, inclusion: { in: Optionable::TAB_TYPES }
   validates :start_date, :end_date, presence: true
   validate :end_date_after_start_date
 
-  VALID_REGIONS = Rails.application.config.regions
   serialize :regions, coder: JSON
   validate :regions_must_be_valid
 
@@ -28,12 +26,12 @@ class Tab < ApplicationRecord
 
   def regions_must_be_valid
     return unless regions.is_a?(Array)
-    invalid_regions = regions - VALID_REGIONS
+    invalid_regions = regions - Optionable::REGIONS
     errors.add(:regions, "contains invalid regions: #{invalid_regions.join(', ')}") if invalid_regions.any?
   end
 
   def prevent_predefined_tab_deletion
-    if VALID_TAB_TYPES.include?(title)
+    if Optionable::TAB_TYPES.include?(title)
       errors.add(:base, "Cannot delete predefined tab: #{title}")
       throw(:abort)
     end
